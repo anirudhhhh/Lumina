@@ -1,0 +1,90 @@
+Cybersecurity, Fraud & Artificial Intelligence Hackathon 2026
+PS1
+Harnessing Generative AI for Automated Reverse Engineering, Static and Dynamic Analysis, and Risk Scoring of Fraudulent Mobile Applications (APKs) and Malwares
+
+Introducing
+An AI-powered desktop tool that automates reverse engineering and dynamic analysis to rapidly uncover hidden vulnerabilities in your Android APKs.
+
+Introduction
+With mobile applications becoming an essential part of everyday digital infrastructure, malicious APKs have evolved to use sophisticated techniques such as code obfuscation,
+encrypted communication, and runtime-based attacks to hide their true intent.
+Our platform aims to automate the complete mobile malware analysis pipeline by combining reverse engineering, static and dynamic analysis, and Generative AI. It analyzes
+application structure, behavior, external communications, and suspicious patterns to provide explainable threat detection and intelligent risk scoring.
+
+01
+Flow Diagram
+
+02
+System Architecture
+
+JADX & ANDROGUARD
+
+Androguard: The Scout Operates at the Structural Layer. It parses binary APK data into Python objects without full decompilation. Manifest Decoder: Extracts permissions and intent filters instantly. Call Graph (CG): Maps every method invocation and data path. IOC Extractor: Rapid regex scanning for hardcoded URLs and IPs. String Tracing: Scans binary strings for hidden crypto-material.
+Output: Structural JSON Metadata
+
+The Great Hybrid Workflow: Androguard identifies high-risk method paths (e.g., SMS data flowing to a URL) and flags specific classes. JADX is then programmatically triggered to decompile only those high-signal classes. This prevents context-window overflow in the GenAI layer
+
+JADX: The Surgeon Operates at the Semantic Layer. It performs high-fidelity translation from Dalvik bytecode to Java source code.
+Clean Java Source: Reconstructs logic with class-level precision. Code Structuring: Organizes files into standard package hierarchies. Refactoring Support: Handles obfuscated class/method naming conventions. Targeted Export: Can decompile specific classes via CLI flags. Output: Human-Readable .java Files
+
+Integrated Static Analysis
+Phase 1: Surface Auditing & Permission Mapping Action: Extracts the AndroidManifest.xml via Androguard to map components like background services and active event listeners. Signal: Isolates dangerous permission combinations (like SMS intercept + Internet) to establish the application's baseline risk profile.
+Phase 2: IoC Extraction & Taint Analysis Action: Scans the binary's raw string headers using regex to pull out hardcoded IP addresses and Command & Control (C2) domains. Signal: Builds a directed call graph to trace sensitive data paths traveling directly from a device source to a network data sink.
+Phase 3: Heuristic Signature & Evasion Detection Action: Uses JADX to decompile the custom app package into Java source code while ignoring standard third-party libraries. Signal: Runs signature checks to flag obfuscation tactics, root detection loops, or hidden runtime code loading (DexClassLoader).
+Phase 4: Gen-AI Context Synthesis (Minification) Action: Strips away boilerplate code, inline comments, and spaces to minimize the source down to raw operational logic. Signal: Bundles the high-signal metadata and code snippets into a dense JSON payload optimized for the LLM's context window.
+
+Integrated Static Analysis
+Phase 5: Gen-AI Assisted Behavioral Interpretation Action: Sends high-signal code segments, API usage patterns, permission mappings, and extracted IoCs to the LLM reasoning layer for contextual analysis. Signal: Generates human-readable explanations of suspicious workflows, identifies application intent, and correlates individual indicators into complete threat scenarios.
+Phase 6: Risk Scoring & Threat Classification Action: Combines static indicators such as dangerous permissions, sensitive API calls, obfuscation techniques, network endpoints, and AI-generated insights into a weighted risk assessment model. Signal: Produces an overall risk score with threat classification (Benign / Suspicious / Malicious) and highlights the major contributing factors behind the verdict.
+Phase 7: Intelligence Enrichment & Reputation Analysis Action: Validates extracted domains, IP addresses, certificates, and external communication endpoints against threat intelligence sources and reputation databases. Signal: Detects known malicious infrastructure, suspicious network patterns, and previously reported indicators to improve detection confidence.
+Phase 8: Automated Security Report Generation Action: Aggregates findings from permission analysis, code inspection, IoC extraction, AI reasoning, and reputation checks into a unified security report.
+Signal: Generates an analyst-style summary containing detected threats, affected components, evidence traces, risk factors, and recommended mitigation steps.
+
+Context Buildup and Frida Hooks
+For Dynamic Analysis
+
+01
+Gathers information from static analysis results such as risk
+scores, flagged files, suspicious code segments, dangerous
+permissions, sensitive API calls, and extracted URLs. This
+information is combined to build a detailed context of the
+application's potential threat areas.
+
+02
+Analyzes the gathered context to identify critical functions and execution paths that require runtime monitoring. Sensitive
+operations such as data access, network communication, code loading, and privilege usage are mapped to their corresponding
+methods for targeted inspection.
+
+03
+Uses the identified suspicious functions and APIs to
+automatically generate Frida hooks. These hooks are prepared
+to monitor selected runtime activities and capture additional
+evidence such as function execution, input/output values,
+data flow, and external communication behavior.
+
+Secure Emulation and Runtime Monitoring
+· Isolated Execution Environment Executes the APK inside a secure, sandboxed emulator environment to safely analyze potentially
+malicious applications without affecting the host system.
+· Frida Based Runtime Instrumentation Dynamically injects Frida hooks into the application process to monitor suspicious functions and sensitive
+operations during execution.
+· Memory & System Activity Monitoring Tracks memory access, API invocations, file operations, permission usage, dynamic code loading, and
+other runtime behaviors.
+· Network Behavior Analysis Observes external communications, API requests, domain interactions, and data transfers to identify
+suspicious connections and validate extracted IoCs.
+· Runtime Evidence Collection Captures behavioral traces from the application and correlates them with static analysis findings to create
+a complete application profile.
+· Threat Validation & Risk Enhancement Uses runtime observations to confirm hidden behaviors, detect evasive techniques, and improve the
+accuracy of the final security assessment.
+
+References
+https://www.researchgate.net/publication/370928893_Ad aptive_Android_APKs_Reverse_Engineering_for_Features_Pr ocessing_in_Machine_Learning_Malware_Detection
+https://www.researchgate.net/publication/394270282_AIDriven_Analysis_of_APK_Features_for_Android_Malware_Det ection_and_Classification
+https://ieeexplore.ieee.org/document/9351333/
+https://ieeexplore.ieee.org/document/11122514
+Datasets
+https://www.unb.ca/cic/datasets/maldroid-2020.html https://androzoo.uni.lu/
+
+Thank you!
+Now, let's get back to work.
+
+

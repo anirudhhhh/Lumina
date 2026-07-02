@@ -1,0 +1,13 @@
+# --- Lumina analysis microservice ---
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
+
+# Static analysis engines
+androguard==4.1.2        # structural APK parsing (manifest, permissions, call graph)
+
+# Optional / feature-gated (import guarded in code):
+#   frida         -> dynamic instrumentation (requires frida-server on emulator)
+#   openai        -> cloud LLM synthesis
+#   requests      -> threat-intel reputation lookups
+requests==2.32.3
