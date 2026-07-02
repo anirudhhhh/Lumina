@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la .claude/skills)",
+      "Bash(git --version)",
+      "WebFetch(domain:mcpmarket.com)",
+      "WebFetch(domain:www.skillsdirectory.com)",
+      "WebSearch",
+      "Bash(export GH_PAGER=cat)",
+      "Bash(gh search *)"
+    ]
+  }
+}
