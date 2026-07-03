@@ -3,6 +3,7 @@ import clsx from "clsx";
 import type { ReactNode } from "react";
 import { Icon, StatusDot } from "./primitives";
 import { useAnalysisStore } from "@/store/useAnalysisStore";
+import favicon from "../assets/Lumina_white.svg";
 
 const NAV = [
   { to: "/", label: "DASHBOARD" },
@@ -17,12 +18,7 @@ function Header() {
     <header className="flex shrink-0 items-center justify-between border-b border-outline bg-background px-6 py-3">
       <div className="flex items-center gap-8">
         <div className="flex flex-col">
-          <span className="font-brand font-display text-2xl font-black leading-none tracking-tight">
-            LUMINA
-          </span>
-          <span className="text-[9px] uppercase tracking-[0.4em] opacity-60">
-            Technical Forensics
-          </span>
+          <img src={ favicon } alt='mySvgImage' className="h-10"/>
         </div>
         <nav className="flex items-center gap-1">
           {NAV.map((n) => (
@@ -32,7 +28,7 @@ function Header() {
               end={n.to === "/"}
               className={({ isActive }) =>
                 clsx(
-                  "px-3 py-1 text-sm font-bold transition-colors",
+                  "px-3 py-1 text-[0.8rem] font-bold transition-colors",
                   isActive
                     ? "bg-accent-teal text-background"
                     : "text-on-surface-variant hover:text-on-surface"
