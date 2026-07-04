@@ -8,6 +8,13 @@ import type {
 } from "@/lib/types";
 import * as api from "@/lib/api";
 
+/** A faux-determinate progress bar for the (blocking) backend operations. */
+export interface Progress {
+  active: boolean;
+  value: number; // 0..100
+  label: string;
+}
+
 interface AnalysisState {
   health: ServiceHealth | null;
   currentApk: ApkMeta | null;
@@ -16,6 +23,7 @@ interface AnalysisState {
   stage: AnalysisStage;
   progressLog: string[];
   runtimeEvents: RuntimeEvent[];
+  progress: Progress;
   busy: boolean;
   error: string | null;
 
@@ -27,7 +35,20 @@ interface AnalysisState {
   loadReport: (apkId: string) => Promise<void>;
   pushRuntimeEvent: (e: RuntimeEvent) => void;
   pushProgress: (msg: string) => void;
+  beginProgress: (phases: string[]) => void;
+  setProgressLabel: (label: string) => void;
+  finishProgress: () => void;
+  failProgress: () => void;
   reset: () => void;
+}
+
+// Interval driving the asymptotic progress ramp (module-scoped: one at a time).
+let progressTimer: ReturnType<typeof setInterval> | null = null;
+function stopProgressTimer() {
+  if (progressTimer) {
+    clearInterval(progressTimer);
+    progressTimer = null;
+  }
 }
 
 export const useAnalysisStore = create<AnalysisState>((set, get) => ({
@@ -38,6 +59,7 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   stage: "IDLE",
   progressLog: [],
   runtimeEvents: [],
+  progress: { active: false, value: 0, label: "" },
   busy: false,
   error: null,
 
@@ -62,10 +84,13 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
     const path = await api.pickApk();
     if (!path) return;
     set({ busy: true, stage: "UPLOADING", progressLog: ["Ingesting APK…"] });
+    get().beginProgress(["Hashing artifact…", "Copying into workspace…", "Parsing manifest…"]);
     try {
       const meta = await api.ingestApk(path);
+      get().finishProgress();
       set({ currentApk: meta, busy: false, stage: "IDLE" });
     } catch (e) {
+      get().failProgress();
       set({ error: String(e), busy: false, stage: "ERROR" });
     }
   },
@@ -77,11 +102,20 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       return;
     }
     set({ busy: true, error: null, stage: "STATIC_PARSING", runtimeEvents: [] });
+    get().beginProgress([
+      "Static parsing (Androguard)…",
+      "Decompiling flagged classes (JADX)…",
+      "IoC extraction & signatures…",
+      "Gen-AI synthesis…",
+      "Risk scoring & report…",
+    ]);
     try {
       const report = await api.runAnalysis(id);
+      get().finishProgress();
       set({ report, stage: report.stage, busy: false, currentApk: report.meta });
       get().refreshReports();
     } catch (e) {
+      get().failProgress();
       set({ error: String(e), busy: false, stage: "ERROR" });
     }
   },
@@ -90,10 +124,19 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
     const id = apkId ?? get().currentApk?.id;
     if (!id) return;
     set({ busy: true, error: null, stage: "DYNAMIC_EMULATION" });
+    get().beginProgress([
+      "Booting sandboxed emulator…",
+      "Installing target via ADB…",
+      "Attaching Frida hooks…",
+      "Capturing runtime trace…",
+      "Re-scoring with dynamic evidence…",
+    ]);
     try {
       const report = await api.runDynamicAnalysis(id);
+      get().finishProgress();
       set({ report, stage: report.stage, busy: false });
     } catch (e) {
+      get().failProgress();
       set({ error: String(e), busy: false, stage: "ERROR" });
     }
   },
@@ -112,6 +155,32 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
     set((s) => ({ runtimeEvents: [...s.runtimeEvents, e] })),
   pushProgress: (msg) =>
     set((s) => ({ progressLog: [...s.progressLog, msg] })),
+
+  // Faux-determinate progress: the backend calls are single blocking requests,
+  // so we ramp asymptotically toward 90% across the expected phases and snap to
+  // 100% on completion. `setProgressLabel` lets live pipeline events refine it.
+  beginProgress: (phases) => {
+    stopProgressTimer();
+    set({ progress: { active: true, value: 4, label: phases[0] ?? "Working…" } });
+    progressTimer = setInterval(() => {
+      const p = get().progress;
+      if (!p.active) return stopProgressTimer();
+      const value = Math.min(90, p.value + (90 - p.value) * 0.08 + 0.5);
+      const idx = Math.min(phases.length - 1, Math.floor((value / 90) * phases.length));
+      set({ progress: { active: true, value, label: phases[idx] ?? p.label } });
+    }, 220);
+  },
+  setProgressLabel: (label) =>
+    set((s) => (s.progress.active ? { progress: { ...s.progress, label } } : {})),
+  finishProgress: () => {
+    stopProgressTimer();
+    set((s) => ({ progress: { ...s.progress, active: true, value: 100, label: "Complete" } }));
+    setTimeout(() => set({ progress: { active: false, value: 0, label: "" } }), 450);
+  },
+  failProgress: () => {
+    stopProgressTimer();
+    set({ progress: { active: false, value: 0, label: "" } });
+  },
 
   reset: () =>
     set({ currentApk: null, report: null, stage: "IDLE", progressLog: [], runtimeEvents: [], error: null }),

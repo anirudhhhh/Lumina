@@ -5,8 +5,6 @@ Exposes the REST surface the Tauri Rust core proxies to. Runs on
 """
 from __future__ import annotations
 
-import shutil
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -55,9 +53,10 @@ def _engine_flags() -> dict:
         has_frida = True
     except Exception:  # noqa: BLE001
         has_frida = False
+    from .analysis.decompile import _resolve_jadx
     return {
         "androguard": has_androguard,
-        "jadx": shutil.which(config.JADX_PATH) is not None,
+        "jadx": _resolve_jadx() is not None,
         "frida": has_frida,
         "llm": genai.llm_available(),
     }

@@ -13,7 +13,13 @@
     "app:build": "tauri build",
     "py:setup": "powershell -ExecutionPolicy Bypass -File python-service/scripts/setup.ps1",
     "py:setup:unix": "bash python-service/scripts/setup.sh",
-    "py:dev": "python -m uvicorn app.main:app --host 127.0.0.1 --port 8756 --reload --app-dir python-service"
+    "py:dev": "python -m uvicorn app.main:app --host 127.0.0.1 --port 8756 --reload --app-dir python-service",
+    "service:build": "powershell -ExecutionPolicy Bypass -File python-service/scripts/build-service.ps1",
+    "service:build:unix": "bash python-service/scripts/build-service.sh",
+    "tools:fetch": "powershell -ExecutionPolicy Bypass -File src-tauri/scripts/fetch-tools.ps1",
+    "tools:fetch:unix": "bash src-tauri/scripts/fetch-tools.sh",
+    "package": "npm run service:build && npm run tools:fetch && tauri build --config src-tauri/tauri.bundle.conf.json",
+    "package:unix": "npm run service:build:unix && npm run tools:fetch:unix && tauri build --config src-tauri/tauri.bundle.conf.json"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.1.1",

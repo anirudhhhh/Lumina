@@ -10,10 +10,11 @@ import Chat from "./pages/Chat";
 import Settings from "./pages/Settings";
 import { useAnalysisStore } from "./store/useAnalysisStore";
 import { useSettingsStore } from "./store/useSettingsStore";
-import { onRuntimeEvent } from "./lib/api";
+import { onRuntimeEvent, onPipelineProgress } from "./lib/api";
 
 export default function App() {
-  const { refreshHealth, refreshReports, pushRuntimeEvent } = useAnalysisStore();
+  const { refreshHealth, refreshReports, pushRuntimeEvent, setProgressLabel } =
+    useAnalysisStore();
   const { settings, loaded, load } = useSettingsStore();
 
   useEffect(() => {
@@ -21,11 +22,15 @@ export default function App() {
     refreshReports();
     load();
     const interval = setInterval(refreshHealth, 15000);
-    let unlisten: (() => void) | undefined;
-    onRuntimeEvent(pushRuntimeEvent).then((u) => (unlisten = u));
+    const unlisteners: Array<() => void> = [];
+    onRuntimeEvent(pushRuntimeEvent).then((u) => unlisteners.push(u));
+    // Live backend phase messages refine the progress bar label.
+    onPipelineProgress((p) => setProgressLabel(p.message)).then((u) =>
+      unlisteners.push(u)
+    );
     return () => {
       clearInterval(interval);
-      unlisten?.();
+      unlisteners.forEach((u) => u());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

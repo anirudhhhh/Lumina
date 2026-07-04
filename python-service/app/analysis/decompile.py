@@ -7,6 +7,7 @@ the pipeline continues on Androguard output.
 """
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -15,22 +16,35 @@ from .. import config
 from ..models import ApkMeta, StaticResult
 
 
-def _jadx_available() -> bool:
-    return shutil.which(config.JADX_PATH) is not None
+def _resolve_jadx() -> str | None:
+    """Locate the jadx launcher. Accepts an absolute path (e.g. the bundled
+    resources/tools/jadx/bin/jadx[.bat]) or a bare name on PATH."""
+    p = Path(config.JADX_PATH)
+    if p.is_absolute():
+        return str(p) if p.exists() else None
+    return shutil.which(config.JADX_PATH)
+
+
+def _launcher(jadx: str) -> list[str]:
+    """Windows .bat launchers must be invoked through cmd.exe."""
+    if os.name == "nt" and jadx.lower().endswith(".bat"):
+        return ["cmd", "/c", jadx]
+    return [jadx]
 
 
 def decompile(meta: ApkMeta, static: StaticResult) -> list[str]:
     """Decompile the APK (optionally targeting flagged classes) with JADX.
     Returns the list of produced .java file paths (relative to workspace)."""
-    if not _jadx_available():
-        print("[decompile] jadx not found on PATH; skipping decompilation")
+    jadx = _resolve_jadx()
+    if not jadx:
+        print("[decompile] jadx not found (bundled or on PATH); skipping decompilation")
         return []
 
     out_dir = config.WORKSPACE / meta.id / "sources"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     cmd = [
-        config.JADX_PATH,
+        *_launcher(jadx),
         "--no-res",             # skip resources, we only want source
         "-d", str(out_dir),
         meta.path,

@@ -17,8 +17,9 @@ pub fn run() {
         .manage(PythonService::new())
         .setup(|app| {
             // Boot the bundled Python analysis microservice on startup.
+            let handle = app.handle().clone();
             let svc = app.state::<PythonService>();
-            if let Err(e) = svc.spawn() {
+            if let Err(e) = svc.spawn(&handle) {
                 eprintln!("[lumina] failed to spawn python service: {e}");
             }
             Ok(())

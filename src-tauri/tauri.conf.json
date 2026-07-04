@@ -36,7 +36,9 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["../python-service/**/*"]
+    "resources": {
+      "resources/tools": "tools"
+    }
   },
   "plugins": {}
 }

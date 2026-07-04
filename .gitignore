@@ -9,6 +9,12 @@ dist-ssr/
 src-tauri/target/
 src-tauri/gen/
 
+# --- Packaging artifacts (built/fetched per-OS, not committed) ---
+src-tauri/binaries/
+src-tauri/resources/tools/*
+!src-tauri/resources/tools/README.md
+python-service/build/
+
 # --- Python ---
 __pycache__/
 *.py[cod]
