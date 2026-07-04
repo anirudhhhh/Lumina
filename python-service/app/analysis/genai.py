@@ -10,8 +10,9 @@ from __future__ import annotations
 import json
 import uuid
 
-from .. import config
+from .. import settings
 from ..models import AiSynthesis, ApkMeta, FridaHook, StaticResult
+from . import llm
 
 # Map suspicious categories to concrete Frida hook targets.
 HOOK_TARGETS = {
@@ -106,28 +107,24 @@ def _heuristic_synthesis(ctx: dict, static: StaticResult) -> AiSynthesis:
 
 def synthesize(meta: ApkMeta, static: StaticResult, code: str) -> AiSynthesis:
     ctx = build_context(meta, static, code)
-    if not config.LLM_API_KEY:
+    if not llm.available():
         return _heuristic_synthesis(ctx, static)
 
+    system = (
+        "You are a senior Android malware reverse engineer. Given structured "
+        "static-analysis evidence, respond ONLY with JSON: {summary, intent, "
+        "investigationPlan: string[], recommendation}."
+    )
     try:
-        from openai import OpenAI
-
-        client = OpenAI(api_key=config.LLM_API_KEY, base_url=config.LLM_BASE_URL)
-        system = (
-            "You are a senior Android malware reverse engineer. Given structured "
-            "static-analysis evidence, respond ONLY with JSON: {summary, intent, "
-            "investigationPlan: string[], recommendation}."
-        )
-        resp = client.chat.completions.create(
-            model=config.LLM_MODEL,
-            messages=[
+        content = llm.complete(
+            [
                 {"role": "system", "content": system},
                 {"role": "user", "content": json.dumps(ctx)},
             ],
-            response_format={"type": "json_object"},
+            response_json=True,
             temperature=0.2,
         )
-        data = json.loads(resp.choices[0].message.content or "{}")
+        data = json.loads(content or "{}")
         return AiSynthesis(
             summary=data.get("summary", ""),
             intent=data.get("intent", ""),
@@ -141,4 +138,4 @@ def synthesize(meta: ApkMeta, static: StaticResult, code: str) -> AiSynthesis:
 
 
 def llm_available() -> bool:
-    return bool(config.LLM_API_KEY)
+    return llm.available()

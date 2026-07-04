@@ -125,6 +125,67 @@ class ServiceHealth(Base):
     jadx: bool
     frida: bool
     llm: bool
+    provider: Optional[str] = None
+    model: Optional[str] = None
+
+
+# --- settings ---
+
+class ProviderView(Base):
+    label: str
+    base_url: str
+    model: str
+    has_key: bool
+    key_hint: str = ""
+    docs: str = ""
+
+
+class SettingsView(Base):
+    active_provider: str
+    onboarded: bool
+    providers: dict[str, ProviderView]
+
+
+class ProviderPatch(Base):
+    api_key: Optional[str] = None
+    model: Optional[str] = None
+    base_url: Optional[str] = None
+    clear_key: Optional[bool] = None
+
+
+class SettingsPatch(Base):
+    active_provider: Optional[str] = None
+    onboarded: Optional[bool] = None
+    providers: Optional[dict[str, ProviderPatch]] = None
+
+
+class TestProviderRequest(Base):
+    provider: str
+
+
+class TestProviderResult(Base):
+    ok: bool
+    provider: str
+    model: str
+    message: str
+
+
+# --- chat ---
+
+class ChatMessage(Base):
+    role: Literal["user", "assistant", "system"]
+    content: str
+
+
+class ChatRequest(Base):
+    messages: list[ChatMessage] = []
+    apk_id: Optional[str] = None
+
+
+class ChatResponse(Base):
+    reply: str
+    provider: str
+    model: str
 
 
 # --- request bodies ---

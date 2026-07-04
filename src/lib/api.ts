@@ -6,10 +6,15 @@
 import type {
   AnalysisReport,
   ApkMeta,
+  ChatMessage,
+  ChatResponse,
   RuntimeEvent,
   ServiceHealth,
+  SettingsPatch,
+  SettingsView,
+  TestProviderResult,
 } from "./types";
-import { mockReport, mockHealth } from "./mock";
+import { mockReport, mockHealth, mockSettings } from "./mock";
 
 // Detect whether we're running inside the Tauri webview.
 export const isTauri = (): boolean =>
@@ -75,6 +80,45 @@ export async function serviceHealth(): Promise<ServiceHealth> {
 export async function exportReportPdf(apkId: string): Promise<string> {
   if (!isTauri()) return "/mock/report.pdf";
   return invoke<string>("export_report_pdf", { apkId });
+}
+
+// --- Settings (bring-your-own-key provider config) ---
+
+export async function getSettings(): Promise<SettingsView> {
+  if (!isTauri()) return mockSettings();
+  return invoke<SettingsView>("get_settings");
+}
+
+export async function updateSettings(patch: SettingsPatch): Promise<SettingsView> {
+  if (!isTauri()) {
+    // Reflect the patch onto the mock so the UI still behaves in browser mode.
+    return { ...mockSettings(), ...(patch as Partial<SettingsView>) } as SettingsView;
+  }
+  return invoke<SettingsView>("update_settings", { patch });
+}
+
+export async function testProvider(provider: string): Promise<TestProviderResult> {
+  if (!isTauri())
+    return { ok: false, provider, model: "-", message: "Unavailable in browser preview." };
+  return invoke<TestProviderResult>("test_provider", { provider });
+}
+
+// --- Interactive analyst chat ---
+
+export async function chat(
+  messages: ChatMessage[],
+  apkId?: string | null
+): Promise<ChatResponse> {
+  if (!isTauri()) {
+    return {
+      reply:
+        "(browser preview) Chat needs the Tauri backend + a configured LLM key. " +
+        "Run the desktop app (`npm run app:dev`) and set a provider key in Settings.",
+      provider: "mock",
+      model: "mock",
+    };
+  }
+  return invoke<ChatResponse>("chat", { messages, apkId: apkId ?? null });
 }
 
 /** ADB: list attached devices/emulators. */

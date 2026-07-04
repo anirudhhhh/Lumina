@@ -10,14 +10,20 @@ import shutil
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import __version__, config, store
-from .analysis import genai
+from . import __version__, config, settings, store
+from .analysis import chat, genai, llm
 from .models import (
     AnalysisReport,
     AnalyzeRequest,
     ApkMeta,
+    ChatRequest,
+    ChatResponse,
     IngestRequest,
     ServiceHealth,
+    SettingsPatch,
+    SettingsView,
+    TestProviderRequest,
+    TestProviderResult,
 )
 from .pipeline import run_dynamic, run_full, run_static
 
@@ -60,7 +66,74 @@ def _engine_flags() -> dict:
 @app.get("/health", response_model=ServiceHealth)
 def health() -> ServiceHealth:
     flags = _engine_flags()
-    return ServiceHealth(ok=True, version=__version__, **flags)
+    desc = llm.describe()
+    return ServiceHealth(
+        ok=True,
+        version=__version__,
+        provider=desc["provider"],
+        model=desc["model"],
+        **flags,
+    )
+
+
+# --- settings (bring-your-own-key provider config) ---
+
+@app.get("/settings", response_model=SettingsView)
+def get_settings() -> SettingsView:
+    return SettingsView.model_validate(settings.public_view())
+
+
+@app.post("/settings", response_model=SettingsView)
+def update_settings(patch: SettingsPatch) -> SettingsView:
+    return SettingsView.model_validate(
+        settings.update(patch.model_dump(by_alias=True, exclude_none=True))
+    )
+
+
+@app.post("/settings/test", response_model=TestProviderResult)
+def test_provider(req: TestProviderRequest) -> TestProviderResult:
+    cfg = settings.provider_config(req.provider)
+    if not cfg.get("apiKey"):
+        return TestProviderResult(
+            ok=False, provider=req.provider, model=cfg["model"],
+            message="No API key configured for this provider.",
+        )
+    try:
+        out = llm.complete(
+            [{"role": "user", "content": "Reply with the single word: OK"}],
+            provider=req.provider,
+            temperature=0.0,
+            max_tokens=5,
+        )
+        return TestProviderResult(
+            ok=True, provider=req.provider, model=cfg["model"],
+            message=f"Connected — model responded: {out.strip()[:40] or 'OK'}",
+        )
+    except Exception as exc:  # noqa: BLE001
+        return TestProviderResult(
+            ok=False, provider=req.provider, model=cfg["model"],
+            message=f"Connection failed: {exc}",
+        )
+
+
+# --- interactive analyst chat ---
+
+@app.post("/chat", response_model=ChatResponse)
+def chat_endpoint(req: ChatRequest) -> ChatResponse:
+    desc = llm.describe()
+    if not desc["hasKey"]:
+        raise HTTPException(
+            status_code=400,
+            detail="No LLM provider configured. Add an API key in Settings.",
+        )
+    try:
+        text = chat.reply(
+            [m.model_dump() for m in req.messages],
+            apk_id=req.apk_id,
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=str(exc))
+    return ChatResponse(reply=text, provider=desc["provider"], model=desc["model"])
 
 
 @app.post("/ingest", response_model=ApkMeta)

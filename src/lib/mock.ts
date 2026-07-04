@@ -1,5 +1,10 @@
 // Mock data used when the UI runs outside the Tauri webview (browser preview).
-import type { AnalysisReport, RuntimeEvent, ServiceHealth } from "./types";
+import type {
+  AnalysisReport,
+  RuntimeEvent,
+  ServiceHealth,
+  SettingsView,
+} from "./types";
 
 export function mockHealth(): ServiceHealth {
   return {
@@ -9,6 +14,49 @@ export function mockHealth(): ServiceHealth {
     jadx: true,
     frida: true,
     llm: false,
+    provider: "openai",
+    model: "gpt-4o-mini",
+  };
+}
+
+export function mockSettings(): SettingsView {
+  return {
+    activeProvider: "openai",
+    onboarded: true,
+    providers: {
+      openai: {
+        label: "OpenAI",
+        baseUrl: "https://api.openai.com/v1",
+        model: "gpt-4o-mini",
+        hasKey: false,
+        keyHint: "",
+        docs: "https://platform.openai.com/api-keys",
+      },
+      gemini: {
+        label: "Google Gemini",
+        baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai/",
+        model: "gemini-2.0-flash",
+        hasKey: false,
+        keyHint: "",
+        docs: "https://aistudio.google.com/app/apikey",
+      },
+      openrouter: {
+        label: "OpenRouter",
+        baseUrl: "https://openrouter.ai/api/v1",
+        model: "openai/gpt-4o-mini",
+        hasKey: false,
+        keyHint: "",
+        docs: "https://openrouter.ai/keys",
+      },
+      custom: {
+        label: "Custom (OpenAI-compatible)",
+        baseUrl: "https://api.openai.com/v1",
+        model: "gpt-4o-mini",
+        hasKey: false,
+        keyHint: "",
+        docs: "",
+      },
+    },
   };
 }
 

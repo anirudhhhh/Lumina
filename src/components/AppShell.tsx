@@ -9,7 +9,9 @@ const NAV = [
   { to: "/", label: "DASHBOARD" },
   { to: "/workspace", label: "WORKSPACE" },
   { to: "/emulation", label: "EMULATION" },
+  { to: "/chat", label: "CHAT" },
   { to: "/reports", label: "REPORTS" },
+  { to: "/settings", label: "SETTINGS" },
 ];
 
 function Header() {
@@ -68,6 +70,9 @@ function StatusBar() {
       <div className="flex items-center gap-6">
         <span className="text-accent-teal">STATUS: {stage}</span>
         <span>ADB: {health?.frida ? "READY" : "—"}</span>
+        <span className={clsx(health?.llm ? "text-accent-teal" : "text-terracotta")}>
+          LLM: {health?.llm ? `${health.provider ?? "?"}/${health.model ?? "?"}` : "NO_KEY"}
+        </span>
         {currentApk && <span className="truncate">TARGET: {currentApk.fileName}</span>}
       </div>
       <div className="flex items-center gap-6">

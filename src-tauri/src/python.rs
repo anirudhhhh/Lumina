@@ -52,8 +52,18 @@ impl PythonService {
         PathBuf::from("python-service")
     }
 
-    fn python_bin() -> String {
-        // Prefer a project virtualenv if present, else system python.
+    /// Resolve the Python interpreter to launch. Prefers a `.venv` inside the
+    /// service directory (created by `scripts/setup`), then falls back to the
+    /// system interpreter.
+    fn python_bin(dir: &std::path::Path) -> String {
+        let venv = if cfg!(windows) {
+            dir.join(".venv").join("Scripts").join("python.exe")
+        } else {
+            dir.join(".venv").join("bin").join("python3")
+        };
+        if venv.exists() {
+            return venv.to_string_lossy().to_string();
+        }
         if cfg!(windows) {
             "python".to_string()
         } else {
@@ -68,7 +78,7 @@ impl PythonService {
             return Ok(());
         }
         let dir = self.service_dir();
-        let child = Command::new(Self::python_bin())
+        let child = Command::new(Self::python_bin(&dir))
             .args([
                 "-m",
                 "uvicorn",
@@ -124,5 +134,7 @@ fn offline_health() -> ServiceHealth {
         jadx: false,
         frida: false,
         llm: false,
+        provider: None,
+        model: None,
     }
 }

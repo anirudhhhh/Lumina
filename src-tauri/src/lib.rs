@@ -39,6 +39,10 @@ pub fn run() {
             commands::service_health,
             commands::export_report_pdf,
             commands::list_devices,
+            commands::get_settings,
+            commands::update_settings,
+            commands::test_provider,
+            commands::chat,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Lumina");

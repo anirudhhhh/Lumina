@@ -183,3 +183,81 @@ pub async fn export_report_pdf(
 pub fn list_devices() -> CmdResult<Vec<String>> {
     Ok(adb::devices())
 }
+
+// --- settings (BYO API keys / provider config) ---
+
+#[tauri::command]
+pub async fn get_settings(svc: State<'_, PythonService>) -> CmdResult<serde_json::Value> {
+    let resp = svc
+        .http()
+        .get(format!("{}/settings", base_url()))
+        .send()
+        .await
+        .map_err(err)?;
+    if !resp.status().is_success() {
+        return Err(format!("settings fetch failed: HTTP {}", resp.status()));
+    }
+    resp.json::<serde_json::Value>().await.map_err(err)
+}
+
+#[tauri::command]
+pub async fn update_settings(
+    patch: serde_json::Value,
+    svc: State<'_, PythonService>,
+) -> CmdResult<serde_json::Value> {
+    let resp = svc
+        .http()
+        .post(format!("{}/settings", base_url()))
+        .json(&patch)
+        .send()
+        .await
+        .map_err(err)?;
+    if !resp.status().is_success() {
+        return Err(format!("settings update failed: HTTP {}", resp.status()));
+    }
+    resp.json::<serde_json::Value>().await.map_err(err)
+}
+
+#[tauri::command]
+pub async fn test_provider(
+    provider: String,
+    svc: State<'_, PythonService>,
+) -> CmdResult<serde_json::Value> {
+    let resp = svc
+        .http()
+        .post(format!("{}/settings/test", base_url()))
+        .json(&json!({ "provider": provider }))
+        .send()
+        .await
+        .map_err(err)?;
+    resp.json::<serde_json::Value>().await.map_err(err)
+}
+
+// --- interactive analyst chat ---
+
+#[tauri::command]
+pub async fn chat(
+    messages: serde_json::Value,
+    apk_id: Option<String>,
+    svc: State<'_, PythonService>,
+) -> CmdResult<serde_json::Value> {
+    let resp = svc
+        .http()
+        .post(format!("{}/chat", base_url()))
+        .json(&json!({ "messages": messages, "apkId": apk_id }))
+        .send()
+        .await
+        .map_err(err)?;
+    if !resp.status().is_success() {
+        // Surface the service's error detail if present.
+        let status = resp.status();
+        let body = resp
+            .json::<serde_json::Value>()
+            .await
+            .ok()
+            .and_then(|v| v.get("detail").and_then(|d| d.as_str()).map(String::from))
+            .unwrap_or_else(|| format!("HTTP {status}"));
+        return Err(body);
+    }
+    resp.json::<serde_json::Value>().await.map_err(err)
+}

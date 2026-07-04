@@ -116,4 +116,58 @@ export interface ServiceHealth {
   jadx: boolean;
   frida: boolean;
   llm: boolean;
+  provider?: string;
+  model?: string;
+}
+
+// --- LLM provider settings (bring-your-own-key) ---
+
+export type ProviderId = "openai" | "gemini" | "openrouter" | "custom";
+
+export interface ProviderView {
+  label: string;
+  baseUrl: string;
+  model: string;
+  hasKey: boolean;
+  keyHint: string;
+  docs: string;
+}
+
+export interface SettingsView {
+  activeProvider: ProviderId;
+  onboarded: boolean;
+  providers: Record<ProviderId, ProviderView>;
+}
+
+export interface ProviderPatch {
+  apiKey?: string;
+  model?: string;
+  baseUrl?: string;
+  clearKey?: boolean;
+}
+
+export interface SettingsPatch {
+  activeProvider?: ProviderId;
+  onboarded?: boolean;
+  providers?: Partial<Record<ProviderId, ProviderPatch>>;
+}
+
+export interface TestProviderResult {
+  ok: boolean;
+  provider: string;
+  model: string;
+  message: string;
+}
+
+// --- interactive analyst chat ---
+
+export interface ChatMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
+export interface ChatResponse {
+  reply: string;
+  provider: string;
+  model: string;
 }

@@ -11,6 +11,8 @@
     "tauri": "tauri",
     "app:dev": "tauri dev",
     "app:build": "tauri build",
+    "py:setup": "powershell -ExecutionPolicy Bypass -File python-service/scripts/setup.ps1",
+    "py:setup:unix": "bash python-service/scripts/setup.sh",
     "py:dev": "python -m uvicorn app.main:app --host 127.0.0.1 --port 8756 --reload --app-dir python-service"
   },
   "dependencies": {

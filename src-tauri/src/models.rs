@@ -37,6 +37,10 @@ pub struct ServiceHealth {
     pub jadx: bool,
     pub frida: bool,
     pub llm: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

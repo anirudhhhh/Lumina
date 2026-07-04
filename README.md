@@ -67,7 +67,7 @@ the APK in a **sandboxed emulator**, captures runtime evidence, and re-scores.
 | UI        | React 18 · TypeScript · Vite · Tailwind CSS · Zustand |
 | Core      | Tauri 2 · Rust (tokio, reqwest, sha2) |
 | Analysis  | Python 3.12 · FastAPI · Androguard · JADX · Frida |
-| Gen-AI    | Any OpenAI-compatible endpoint (cloud or local) |
+| Gen-AI    | OpenAI · Google Gemini · OpenRouter · any OpenAI-compatible endpoint (BYO key) |
 
 ## Prerequisites
 
@@ -86,14 +86,53 @@ the APK in a **sandboxed emulator**, captures runtime evidence, and re-scores.
 # 1. Frontend deps
 npm install
 
-# 2. Python analysis service deps
-cd python-service
-python -m pip install -r requirements.txt
-cd ..
+# 2. Python analysis service deps — install into a virtualenv (recommended)
+npm run py:setup          # Windows  → creates python-service/.venv + installs
+#   or, on macOS/Linux:
+npm run py:setup:unix
+```
 
-# 3. (optional) configure LLM / tooling
+> **Why a venv?** Yes — always install the Python service into a virtualenv.
+> `androguard` pulls in a large, tightly-coupled dependency tree; installing it
+> into your global site-packages is what produces the *"package version
+> mismatch"* errors, because it collides with whatever else is already there.
+> A clean `.venv` isolates it. The Tauri core **auto-detects**
+> `python-service/.venv` and launches the service with it — no activation
+> needed. If you'd rather do it by hand:
+>
+> ```bash
+> cd python-service
+> python -m venv .venv
+> .venv/Scripts/python -m pip install -r requirements.txt   # Windows
+> # ./.venv/bin/python -m pip install -r requirements.txt    # macOS/Linux
+> ```
+>
+> Use **Python 3.10–3.12** (androguard has trouble on 3.13+). Note
+> `requirements.txt` now uses version *ranges* rather than hard pins so pip can
+> resolve a consistent set for your interpreter.
+
+```bash
+# 3. (optional) seed an LLM key via env — or just do it in-app (see below)
 cp .env.example .env      # then edit
 ```
+
+### LLM providers (bring your own key)
+
+Lumina uses **your own** API keys and compute — there is no shared/bundled key.
+On first launch an **onboarding** screen asks you to pick a provider and paste a
+key (or skip). You can change the provider, key, and model anytime from the
+**Settings** page.
+
+| Provider    | Get a key |
+|-------------|-----------|
+| OpenAI      | <https://platform.openai.com/api-keys> |
+| Google Gemini | <https://aistudio.google.com/app/apikey> |
+| OpenRouter  | <https://openrouter.ai/keys> |
+| Custom      | any OpenAI-compatible base URL (Ollama, LM Studio, Azure, …) |
+
+Keys are stored locally in `~/.lumina/config.json` and never leave your machine.
+The active provider powers both **AI synthesis** in the pipeline and the
+**Chat** analyst shell.
 
 ## Running
 
@@ -132,7 +171,7 @@ npm run dev          # http://localhost:1420
 Lumina/
 ├── src/                     # React frontend
 │   ├── components/          # AppShell, TUI primitives
-│   ├── pages/               # Dashboard, Workspace, Emulation, Reports
+│   ├── pages/               # Dashboard, Workspace, Emulation, Chat, Reports, Settings
 │   ├── lib/                 # types, Tauri API wrappers, mock data
 │   └── store/               # Zustand analysis store
 ├── src-tauri/               # Tauri Rust core (orchestrator)
@@ -156,8 +195,12 @@ alert / sage accents, and a TUI (terminal UI) aesthetic. Tokens live in
 
 ## Notes & next steps
 
-- **LLM**: without `LUMINA_LLM_API_KEY`, a deterministic heuristic synthesis is
-  used so the pipeline always produces output. Set the key for real LLM reasoning.
+- **LLM**: configure a provider key in onboarding / Settings (or seed one via
+  `LUMINA_LLM_API_KEY`). Without any key, a deterministic heuristic synthesis is
+  used so the pipeline always produces output; the **Chat** shell needs a key.
+- **Chat**: the `CHAT` tab is a Claude-Code-CLI-style analyst shell — discuss a
+  vulnerability or the loaded sample. Slash commands: `/help`, `/model`,
+  `/provider`, `/providers`, `/context on|off`, `/report`, `/clear`, `/settings`.
 - **JADX / Frida**: both degrade gracefully — the pipeline runs on Androguard
   output alone and simulates a runtime trace when Frida/emulator are absent.
 - Bring your own APK samples (e.g. the **MalDroid-2020** / **AndroZoo** datasets
