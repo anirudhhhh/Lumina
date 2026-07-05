@@ -19,26 +19,35 @@ def run_static(meta: ApkMeta) -> StaticResult:
     return static
 
 
+def run_ai(report: AnalysisReport) -> AnalysisReport:
+    """Phases 4-6 on an existing static report: Gen-AI synthesis + rescore.
+
+    Split out from ``run_static`` so the caller can persist and surface the
+    decompiled sources first (the workspace becomes navigable immediately),
+    then run the slower LLM step as a second request."""
+    meta, static = report.meta, report.static
+    # Signal-ranked, match-centered evidence keeps the LLM payload small & relevant.
+    code = decompile.select_evidence(meta, static, static.decompiled_files)
+    report.ai = genai.synthesize(meta, static, code)
+    report.risk = risk.score(static, report.dynamic)
+    report.stage = "COMPLETE"
+    report.generated_at = _now_iso()
+    return report
+
+
 def run_full(meta: ApkMeta) -> AnalysisReport:
     """Static -> Gen-AI synthesis -> risk scoring (no emulation yet)."""
     static = run_static(meta)
-
-    # Phases 4-5: Gen-AI context synthesis + behavioral interpretation.
-    code = decompile.read_snippets(meta, static.decompiled_files)
-    ai = genai.synthesize(meta, static, code)
-
-    # Phase 6: risk scoring.
-    score = risk.score(static, None)
-
-    return AnalysisReport(
+    report = AnalysisReport(
         meta=meta,
-        stage="COMPLETE",
-        risk=score,
+        stage="STATIC_PARSING",
+        risk=risk.score(static, None),
         static=static,
-        ai=ai,
+        ai=None,
         dynamic=None,
         generated_at=_now_iso(),
     )
+    return run_ai(report)
 
 
 def run_dynamic(report: AnalysisReport) -> AnalysisReport:

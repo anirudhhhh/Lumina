@@ -40,6 +40,7 @@ def complete(
     temperature: float = 0.3,
     response_json: bool = False,
     max_tokens: int | None = None,
+    timeout: float | None = None,
 ) -> str:
     """Run a chat completion against the resolved provider and return text."""
     cfg = settings.provider_config(provider)
@@ -58,6 +59,10 @@ def complete(
         kwargs["response_format"] = {"type": "json_object"}
     if max_tokens:
         kwargs["max_tokens"] = max_tokens
+    if timeout:
+        # Bound the request so a slow/large call can't stall the pipeline; the
+        # caller falls back to heuristic synthesis on timeout.
+        kwargs["timeout"] = timeout
     try:
         resp = client.chat.completions.create(**kwargs)
     except Exception as exc:  # noqa: BLE001

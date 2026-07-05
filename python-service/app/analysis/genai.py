@@ -26,6 +26,21 @@ HOOK_TARGETS = {
 }
 
 
+# Reputation ranking so the most suspicious IoCs survive the cap.
+_IOC_ORDER = {"BLACKLISTED": 0, "SUSPICIOUS": 1, "UNKNOWN": 2, "BENIGN": 3}
+
+
+def _select_iocs(static: StaticResult, limit: int = 30) -> list:
+    """Prioritise non-benign indicators and cap the count. A 1 MB APK can yield
+    hundreds of domain-like strings; shipping them all bloats the LLM payload
+    (the main cause of the analysis stalling) without adding signal."""
+    ranked = sorted(
+        static.iocs,
+        key=lambda i: _IOC_ORDER.get((i.reputation or "UNKNOWN"), 2),
+    )
+    return ranked[:limit]
+
+
 def build_context(meta: ApkMeta, static: StaticResult, code: str) -> dict:
     """Phase 4 — bundle high-signal metadata + code into an LLM payload."""
     return {
@@ -35,7 +50,7 @@ def build_context(meta: ApkMeta, static: StaticResult, code: str) -> dict:
             {"category": f.category, "severity": f.severity, "evidence": f.evidence}
             for f in static.findings
         ],
-        "iocs": [{"type": i.type, "value": i.value, "rep": i.reputation} for i in static.iocs],
+        "iocs": [{"type": i.type, "value": i.value, "rep": i.reputation} for i in _select_iocs(static)],
         "code_excerpt": code,
     }
 
@@ -123,6 +138,8 @@ def synthesize(meta: ApkMeta, static: StaticResult, code: str) -> AiSynthesis:
             ],
             response_json=True,
             temperature=0.2,
+            max_tokens=900,
+            timeout=90.0,
         )
         data = json.loads(content or "{}")
         return AiSynthesis(

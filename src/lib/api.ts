@@ -50,16 +50,59 @@ export async function runAnalysis(apkId: string): Promise<AnalysisReport> {
   return invoke<AnalysisReport>("run_analysis", { apkId });
 }
 
-/** Run only static analysis (fast path). */
+/** Run only static analysis (fast path — decompiles + parses, no AI). */
 export async function runStaticAnalysis(apkId: string): Promise<AnalysisReport> {
-  if (!isTauri()) return mockReport();
+  if (!isTauri()) return { ...mockReport(), stage: "STATIC_PARSING", ai: undefined };
   return invoke<AnalysisReport>("run_static_analysis", { apkId });
+}
+
+/** Second phase: Gen-AI synthesis + final risk on an already-parsed sample. */
+export async function runAiAnalysis(apkId: string): Promise<AnalysisReport> {
+  if (!isTauri()) return mockReport();
+  return invoke<AnalysisReport>("run_ai_analysis", { apkId });
+}
+
+/** Read a decompiled source file's text from the sample workspace. */
+export async function readSourceFile(
+  apkId: string,
+  path: string
+): Promise<{ path: string; content: string; truncated: boolean }> {
+  if (!isTauri())
+    return { path, content: "// Source preview requires the desktop app.", truncated: false };
+  return invoke("read_source_file", { apkId, path });
 }
 
 /** Start dynamic (Frida/emulator) analysis for an already-analyzed APK. */
 export async function runDynamicAnalysis(apkId: string): Promise<AnalysisReport> {
   if (!isTauri()) return mockReport();
   return invoke<AnalysisReport>("run_dynamic_analysis", { apkId });
+}
+
+export interface DynamicPoll {
+  events: RuntimeEvent[];
+  cursor: number;
+  running: boolean;
+  mode: string | null;
+  error: string | null;
+  finalized: boolean;
+}
+
+/** Begin a background, live-streaming dynamic run. */
+export async function startDynamicAnalysis(
+  apkId: string
+): Promise<{ apkId: string; running: boolean; mode: string; cursor: number }> {
+  if (!isTauri()) return { apkId, running: true, mode: "simulated", cursor: 0 };
+  return invoke("start_dynamic_analysis", { apkId });
+}
+
+/** Poll the live runtime-event stream for a running dynamic job. */
+export async function pollDynamicEvents(
+  apkId: string,
+  cursor: number
+): Promise<DynamicPoll> {
+  if (!isTauri())
+    return { events: [], cursor, running: false, mode: "simulated", error: null, finalized: true };
+  return invoke("poll_dynamic_events", { apkId, cursor });
 }
 
 export async function getReport(apkId: string): Promise<AnalysisReport> {

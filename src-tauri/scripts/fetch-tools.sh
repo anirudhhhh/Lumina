@@ -52,6 +52,18 @@ else
   echo "==> JRE already present, skipping"
 fi
 
+# --- Android platform-tools (adb) for dynamic analysis ---
+if [ ! -x "$TOOLS/platform-tools/adb" ]; then
+  echo "==> Downloading Android platform-tools (adb) ($OS)"
+  PT_OS="linux"; [ "$OS" = "mac" ] && PT_OS="darwin"
+  curl -fsSL "https://dl.google.com/android/repository/platform-tools-latest-$PT_OS.zip" -o "$TMP/platform-tools.zip"
+  rm -rf "$TOOLS/platform-tools"
+  unzip -q "$TMP/platform-tools.zip" -d "$TOOLS"   # zip already contains platform-tools/
+  chmod +x "$TOOLS/platform-tools/adb" || true
+else
+  echo "==> platform-tools already present, skipping"
+fi
+
 rm -rf "$TMP"
 echo
 echo "Tools staged in $TOOLS"

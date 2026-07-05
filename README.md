@@ -212,18 +212,36 @@ fall back to your dev Python/JADX). The sidecar is only wired in for `package`.
 1. **Upload** — Dashboard → `UPLOAD_NEW_ARTIFACT`. The Rust core hashes the APK
    (SHA-256), copies it into the workspace, and Androguard reads its
    package/version. A progress bar tracks ingest.
-2. **Run analysis** — Dashboard → `RUN_ANALYSIS` kicks off the pipeline (a
-   progress bar shows each phase):
-   - *Static parse* (Androguard) → permissions + manifest surface audit
-   - *Decompile* flagged classes (JADX) → dense code excerpt
-   - *IoC extraction* + heuristic signatures (SMS hijack, DexClassLoader, …)
-   - *Gen-AI synthesis* — your active LLM explains intent + an investigation plan
-   - *Risk scoring* → `BENIGN / SUSPICIOUS / MALICIOUS` with contributing factors
-3. **Inspect** — the **Workspace** tab shows the decompiled file tree, source,
-   findings, and the AI synthesis side-by-side.
-4. **Dynamic validation (optional)** — the **Emulation** tab takes the
-   AI-generated Frida hooks, runs the sample on a sandboxed emulator, streams a
-   live runtime trace, confirms findings, and re-scores.
+2. **Run analysis** — Dashboard → `RUN_ANALYSIS` runs the pipeline in **two
+   phases** so the UI never blocks on the LLM:
+   - **Phase 1 — static (fast):** Androguard parse → permissions + manifest
+     audit, IoC extraction + heuristic signatures (SMS hijack, DexClassLoader,
+     …), and JADX decompilation. The report is surfaced the moment this
+     finishes, so the **Workspace becomes navigable immediately**.
+   - **Phase 2 — AI (slower, runs in the background):** only the highest-signal
+     evidence is selected — non-benign IoCs are capped and code excerpts are
+     built from *match-centered windows* of the top-ranked decompiled files
+     rather than whole-file dumps — then your active LLM explains intent and an
+     investigation plan. Final *risk scoring* → `BENIGN / SUSPICIOUS /
+     MALICIOUS` with contributing factors.
+   A progress bar tracks each phase; the AI call is time-bounded and falls back
+   to a deterministic heuristic synthesis if no key is set or it stalls.
+3. **Inspect** — the **Workspace** tab shows the decompiled file tree with **live
+   source** (fetched on click), findings, and the AI synthesis side-by-side. You
+   can browse decompiled sources during Phase 2 while the report is still being
+   generated.
+4. **Dynamic validation (optional)** — the **Emulation** tab runs the sample on
+   a live Android guest and instruments it with Frida. The engine is
+   **emulator-agnostic**: it drives whatever target is reachable over `adb` — a
+   physical device, an existing Android Studio AVD, or (later) a bundled QEMU
+   sandbox. On start it provisions an arch-matched `frida-server`, installs the
+   APK, arms the AI-generated hooks plus a baseline coverage set (network,
+   crypto, DexClassLoader, Runtime.exec, SmsManager), samples runtime behaviour,
+   and **streams the trace live** into the UI. Findings observed at runtime are
+   marked *confirmed* and the risk is re-scored; the target is uninstalled after
+   sampling. With no device attached it streams a deterministic simulated trace
+   so the flow stays usable. Requires the bundled `adb` (fetched by
+   `npm run tools:fetch`) and a **rooted** guest (standard emulator images are).
 5. **Discuss** — the **Chat** tab is a Claude-Code-CLI-style shell. With a report
    loaded it answers grounded in that sample's evidence; type `/help` for
    commands (`/model`, `/provider`, `/context on|off`, `/report`, …).
@@ -243,9 +261,9 @@ Lumina/
 │   └── store/               # Zustand analysis store
 ├── src-tauri/               # Tauri Rust core (orchestrator)
 │   ├── src/                 # commands, python spawner, adb, models
-│   ├── scripts/            # fetch-tools.(ps1|sh) — download JADX + JRE
+│   ├── scripts/            # fetch-tools.(ps1|sh) — download JADX + JRE + adb
 │   ├── binaries/           # frozen service sidecar (built, git-ignored)
-│   ├── resources/tools/    # bundled JADX + JRE (fetched, git-ignored)
+│   ├── resources/tools/    # bundled JADX + JRE + platform-tools/adb (fetched, git-ignored)
 │   └── tauri.bundle.conf.json  # build overlay enabling the sidecar
 ├── python-service/          # FastAPI analysis microservice
 │   ├── app/

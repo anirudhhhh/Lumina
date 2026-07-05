@@ -25,8 +25,8 @@ export default function Emulation() {
         <span className="text-on-surface-variant">
           &gt; SECURE_EMULATION / FRIDA_RUNTIME_MONITOR
         </span>
-        <span className="text-tertiary">
-          KERNEL: EMULATOR-X86_64 | {devices.length} DEVICE(S)
+        <span className={clsx(devices.length > 0 ? "text-tertiary" : "text-outline")}>
+          {devices.length > 0 ? `LIVE: ${devices[0]}` : "NO DEVICE — SIMULATED"} | {devices.length} DEVICE(S)
         </span>
       </div>
 
@@ -54,10 +54,14 @@ export default function Emulation() {
 
           <Module label="ISOLATED_ENVIRONMENT">
             <div className="space-y-3 text-[11px]">
-              <Row k="Sandbox" v="Android VM (Frida server active)" ok />
+              <Row
+                k="Sandbox"
+                v={devices.length > 0 ? "Live guest (frida-server provisioned)" : "Simulated trace (no device)"}
+                ok={devices.length > 0}
+              />
               <Row k="Devices" v={devices[0] ?? "none attached"} ok={devices.length > 0} />
-              <Row k="Network" v="TAP capture → IoC validation" ok />
-              <Row k="Snapshot" v="Clean baseline @ boot" ok />
+              <Row k="Instrument" v="Frida hooks + baseline coverage" ok />
+              <Row k="Cleanup" v="Target uninstalled after sampling" ok />
             </div>
             <div className="mt-4 flex gap-3">
               <button
@@ -76,8 +80,8 @@ export default function Emulation() {
           <div className="flex flex-1 flex-col overflow-hidden tui-border">
             <div className="flex h-8 items-center justify-between border-b border-outline-variant bg-surface-container px-4 text-[11px]">
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 animate-pulse bg-tertiary" />
-                <span>RUNTIME_TRACE: PID_4892</span>
+                <span className={clsx("h-2 w-2", busy ? "animate-pulse bg-tertiary" : "bg-outline")} />
+                <span>RUNTIME_TRACE: {stage === "DYNAMIC_EMULATION" ? "CAPTURING…" : `${events.length} EVENT(S)`}</span>
               </div>
               <button className="text-[10px] text-tertiary hover:underline">SAVE_LOG</button>
             </div>

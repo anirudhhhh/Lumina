@@ -23,7 +23,7 @@ from .models import (
     TestProviderRequest,
     TestProviderResult,
 )
-from .pipeline import run_dynamic, run_full, run_static
+from .pipeline import run_ai, run_dynamic, run_full, run_static
 
 app = FastAPI(title="Lumina Analysis Service", version=__version__)
 
@@ -178,6 +178,12 @@ def analyze(req: AnalyzeRequest) -> AnalysisReport:
 
 @app.post("/analyze/static", response_model=AnalysisReport)
 def analyze_static(req: AnalyzeRequest) -> AnalysisReport:
+    """Fast path: structural parse + JADX decompilation + preliminary risk.
+
+    Persisted immediately so the frontend can render the decompiled sources and
+    findings while the (slower) AI synthesis runs as a separate /analyze/ai call."""
+    from datetime import datetime, timezone
+
     from .analysis import risk
 
     meta = _require_meta(req.apk_id)
@@ -187,8 +193,23 @@ def analyze_static(req: AnalyzeRequest) -> AnalysisReport:
         stage="STATIC_PARSING",
         risk=risk.score(static, None),
         static=static,
-        generated_at="",
+        generated_at=datetime.now(timezone.utc).isoformat(),
     )
+    store.put_report(report)
+    return report
+
+
+@app.post("/analyze/ai", response_model=AnalysisReport)
+def analyze_ai(req: AnalyzeRequest) -> AnalysisReport:
+    """Second phase: Gen-AI synthesis + final risk on an already-parsed sample.
+    Runs run_static first if no static report exists yet."""
+    report = store.get_report(req.apk_id)
+    if report is None:
+        meta = _require_meta(req.apk_id)
+        report = run_full(meta)
+        store.put_report(report)
+        return report
+    report = run_ai(report)
     store.put_report(report)
     return report
 
@@ -205,6 +226,28 @@ def analyze_dynamic(req: AnalyzeRequest) -> AnalysisReport:
     return report
 
 
+@app.post("/analyze/dynamic/start")
+def analyze_dynamic_start(req: AnalyzeRequest) -> dict:
+    """Begin a background dynamic run and return immediately. The frontend polls
+    /analyze/dynamic/events to stream the live runtime trace, then fetches the
+    finalized report once the run completes."""
+    from .analysis import dynamic
+
+    report = store.get_report(req.apk_id)
+    if report is None:
+        meta = _require_meta(req.apk_id)
+        report = run_full(meta)
+        store.put_report(report)
+    return dynamic.start(report)
+
+
+@app.get("/analyze/dynamic/events/{apk_id}")
+def analyze_dynamic_events(apk_id: str, cursor: int = 0) -> dict:
+    from .analysis import dynamic
+
+    return dynamic.poll(apk_id, cursor)
+
+
 @app.get("/report/{apk_id}", response_model=AnalysisReport)
 def get_report(apk_id: str) -> AnalysisReport:
     report = store.get_report(apk_id)
@@ -216,6 +259,28 @@ def get_report(apk_id: str) -> AnalysisReport:
 @app.get("/reports", response_model=list[ApkMeta])
 def list_reports() -> list[ApkMeta]:
     return store.list_metas()
+
+
+@app.get("/workspace/{apk_id}/file")
+def read_source_file(apk_id: str, path: str) -> dict:
+    """Return the text of a decompiled source file under the sample's workspace.
+    Path-traversal is prevented by resolving against the sources root."""
+    root = (config.WORKSPACE / apk_id / "sources").resolve()
+    try:
+        target = (root / path).resolve()
+    except Exception:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail="invalid path")
+    if root not in target.parents and target != root:
+        raise HTTPException(status_code=403, detail="path outside workspace")
+    if not target.is_file():
+        raise HTTPException(status_code=404, detail="file not found")
+    try:
+        raw = target.read_text("utf-8", "ignore")
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"read failed: {exc}")
+    limit = 200_000
+    truncated = len(raw) > limit
+    return {"path": path, "content": raw[:limit], "truncated": truncated}
 
 
 @app.post("/report/{apk_id}/export")

@@ -124,6 +124,16 @@ impl PythonService {
             envs.push(("LUMINA_JADX_PATH".into(), jadx.to_string_lossy().into()));
         }
 
+        // Android platform-tools (adb) for the dynamic-analysis engine.
+        let adb = if cfg!(windows) {
+            tools.join("platform-tools").join("adb.exe")
+        } else {
+            tools.join("platform-tools").join("adb")
+        };
+        if adb.exists() {
+            envs.push(("LUMINA_ADB_PATH".into(), adb.to_string_lossy().into()));
+        }
+
         // macOS JREs nest the runtime under Contents/Home.
         let jre = if cfg!(target_os = "macos") {
             tools.join("jre").join("Contents").join("Home")
@@ -154,6 +164,11 @@ impl PythonService {
             return Ok(());
         }
         let envs = Self::tool_env(app);
+        // Mirror the resolved tool paths into this process's environment too, so
+        // Rust-side helpers (e.g. adb device discovery) use the bundled tools.
+        for (k, v) in &envs {
+            std::env::set_var(k, v);
+        }
         let child = if let Some(bin) = Self::sidecar_path() {
             Command::new(bin)
                 .envs(envs)

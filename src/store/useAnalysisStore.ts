@@ -95,6 +95,10 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
     }
   },
 
+  // Two-phase analysis: run static parsing + decompilation first and surface
+  // the report immediately (the workspace becomes navigable), then run the
+  // slower Gen-AI synthesis as a second call. This keeps the UI responsive and
+  // avoids the old "stuck at 90%" stall while the LLM was working.
   analyze: async (apkId) => {
     const id = apkId ?? get().currentApk?.id;
     if (!id) {
@@ -106,11 +110,23 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       "Static parsing (Androguard)…",
       "Decompiling flagged classes (JADX)…",
       "IoC extraction & signatures…",
-      "Gen-AI synthesis…",
-      "Risk scoring & report…",
     ]);
     try {
-      const report = await api.runAnalysis(id);
+      // Phase 1 — static + decompile. Surface it so the workspace populates.
+      const staticReport = await api.runStaticAnalysis(id);
+      set({
+        report: staticReport,
+        stage: staticReport.stage,
+        currentApk: staticReport.meta,
+      });
+      // Phase 2 — Gen-AI synthesis + final risk. Workspace is already browsable.
+      get().beginProgress([
+        "Selecting high-signal evidence…",
+        "Gen-AI context synthesis…",
+        "Risk scoring & report…",
+      ]);
+      set({ stage: "GENAI_SYNTHESIS" });
+      const report = await api.runAiAnalysis(id);
       get().finishProgress();
       set({ report, stage: report.stage, busy: false, currentApk: report.meta });
       get().refreshReports();
@@ -120,21 +136,43 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
     }
   },
 
+  // Live-streaming dynamic run: kick off a background job, then poll for runtime
+  // events and append them to the trace as they arrive. Falls back cleanly if
+  // no device is attached (the backend streams a simulated trace instead).
   runDynamic: async (apkId) => {
     const id = apkId ?? get().currentApk?.id;
     if (!id) return;
-    set({ busy: true, error: null, stage: "DYNAMIC_EMULATION" });
+    set({ busy: true, error: null, stage: "DYNAMIC_EMULATION", runtimeEvents: [] });
     get().beginProgress([
-      "Booting sandboxed emulator…",
+      "Provisioning sandbox & frida-server…",
       "Installing target via ADB…",
-      "Attaching Frida hooks…",
+      "Arming Frida hooks…",
       "Capturing runtime trace…",
       "Re-scoring with dynamic evidence…",
     ]);
     try {
-      const report = await api.runDynamicAnalysis(id);
+      await api.startDynamicAnalysis(id);
+      let cursor = 0;
+      // Safety cap so a stuck backend can't spin forever (~140s at 700ms).
+      for (let i = 0; i < 200; i++) {
+        const poll = await api.pollDynamicEvents(id, cursor);
+        cursor = poll.cursor;
+        if (poll.events.length) {
+          set((s) => ({ runtimeEvents: [...s.runtimeEvents, ...poll.events] }));
+        }
+        if (poll.mode && poll.mode !== "pending") {
+          get().setProgressLabel(`Capturing runtime trace (${poll.mode})…`);
+        }
+        if (poll.finalized) {
+          if (poll.error) throw new Error(poll.error);
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 700));
+      }
+      const report = await api.getReport(id);
       get().finishProgress();
       set({ report, stage: report.stage, busy: false });
+      get().refreshReports();
     } catch (e) {
       get().failProgress();
       set({ error: String(e), busy: false, stage: "ERROR" });

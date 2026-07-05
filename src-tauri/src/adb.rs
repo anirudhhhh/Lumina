@@ -4,7 +4,10 @@
 use std::process::Command;
 
 fn adb() -> Command {
-    Command::new("adb")
+    // Prefer the bundled platform-tools adb (set by python::tool_env) so device
+    // discovery works with zero external installs; fall back to PATH.
+    let bin = std::env::var("LUMINA_ADB_PATH").unwrap_or_else(|_| "adb".into());
+    Command::new(bin)
 }
 
 /// Return the list of attached devices/emulators (e.g. "emulator-5554").

@@ -110,9 +110,54 @@ pub async fn run_analysis(
 #[tauri::command]
 pub async fn run_static_analysis(
     apk_id: String,
+    app: tauri::AppHandle,
     svc: State<'_, PythonService>,
 ) -> CmdResult<AnalysisReport> {
+    let _ = app.emit(
+        "pipeline-progress",
+        PipelineProgress {
+            stage: "STATIC_PARSING".into(),
+            message: "Decompiling with JADX & parsing manifest…".into(),
+        },
+    );
     proxy_report("analyze/static", &apk_id, &svc).await
+}
+
+/// Second analysis phase: Gen-AI synthesis + final risk on a parsed sample.
+#[tauri::command]
+pub async fn run_ai_analysis(
+    apk_id: String,
+    app: tauri::AppHandle,
+    svc: State<'_, PythonService>,
+) -> CmdResult<AnalysisReport> {
+    let _ = app.emit(
+        "pipeline-progress",
+        PipelineProgress {
+            stage: "GENAI_SYNTHESIS".into(),
+            message: "AI context synthesis & risk scoring…".into(),
+        },
+    );
+    proxy_report("analyze/ai", &apk_id, &svc).await
+}
+
+/// Read a decompiled source file's text from the sample's workspace.
+#[tauri::command]
+pub async fn read_source_file(
+    apk_id: String,
+    path: String,
+    svc: State<'_, PythonService>,
+) -> CmdResult<serde_json::Value> {
+    let resp = svc
+        .http()
+        .get(format!("{}/workspace/{}/file", base_url(), apk_id))
+        .query(&[("path", path.as_str())])
+        .send()
+        .await
+        .map_err(err)?;
+    if !resp.status().is_success() {
+        return Err(format!("read failed: HTTP {}", resp.status()));
+    }
+    resp.json::<serde_json::Value>().await.map_err(err)
 }
 
 #[tauri::command]
@@ -129,6 +174,54 @@ pub async fn run_dynamic_analysis(
         },
     );
     proxy_report("analyze/dynamic", &apk_id, &svc).await
+}
+
+/// Begin a background (live-streaming) dynamic run. Returns an initial status
+/// snapshot; the frontend then polls `poll_dynamic_events`.
+#[tauri::command]
+pub async fn start_dynamic_analysis(
+    apk_id: String,
+    app: tauri::AppHandle,
+    svc: State<'_, PythonService>,
+) -> CmdResult<serde_json::Value> {
+    let _ = app.emit(
+        "pipeline-progress",
+        PipelineProgress {
+            stage: "DYNAMIC_EMULATION".into(),
+            message: "Provisioning sandbox & arming Frida hooks…".into(),
+        },
+    );
+    let resp = svc
+        .http()
+        .post(format!("{}/analyze/dynamic/start", base_url()))
+        .json(&json!({ "apkId": apk_id }))
+        .send()
+        .await
+        .map_err(err)?;
+    if !resp.status().is_success() {
+        return Err(format!("dynamic start failed: HTTP {}", resp.status()));
+    }
+    resp.json::<serde_json::Value>().await.map_err(err)
+}
+
+/// Poll the live runtime-event stream for a running dynamic job.
+#[tauri::command]
+pub async fn poll_dynamic_events(
+    apk_id: String,
+    cursor: u64,
+    svc: State<'_, PythonService>,
+) -> CmdResult<serde_json::Value> {
+    let resp = svc
+        .http()
+        .get(format!("{}/analyze/dynamic/events/{}", base_url(), apk_id))
+        .query(&[("cursor", cursor.to_string())])
+        .send()
+        .await
+        .map_err(err)?;
+    if !resp.status().is_success() {
+        return Err(format!("dynamic poll failed: HTTP {}", resp.status()));
+    }
+    resp.json::<serde_json::Value>().await.map_err(err)
 }
 
 #[tauri::command]

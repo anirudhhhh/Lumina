@@ -44,4 +44,16 @@ if (-not (Test-Path (Join-Path $jreDir "bin\java.exe"))) {
     Write-Host "==> JRE already present, skipping" -ForegroundColor DarkGray
 }
 
+# --- Android platform-tools (adb) for dynamic analysis ---
+$ptDir = Join-Path $tools "platform-tools"
+if (-not (Test-Path (Join-Path $ptDir "adb.exe"))) {
+    Write-Host "==> Downloading Android platform-tools (adb)" -ForegroundColor Cyan
+    $zip = Join-Path $tmp "platform-tools.zip"
+    Invoke-WebRequest -Uri "https://dl.google.com/android/repository/platform-tools-latest-windows.zip" -OutFile $zip
+    if (Test-Path $ptDir) { Remove-Item -Recurse -Force $ptDir }
+    Expand-Archive -Path $zip -DestinationPath $tools -Force  # zip already contains platform-tools/
+} else {
+    Write-Host "==> platform-tools already present, skipping" -ForegroundColor DarkGray
+}
+
 Write-Host "`nTools staged in $tools" -ForegroundColor Green
